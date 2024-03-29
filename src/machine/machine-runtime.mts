@@ -14,6 +14,7 @@ export enum RuntimeStatus {
   Stopped = 'stopped',
   Pending = 'pending',
   Running = 'running',
+  Done = 'done',
 }
 
 export class MachineRuntime<SM extends AnyStateMachine> {
@@ -48,11 +49,9 @@ export class MachineRuntime<SM extends AnyStateMachine> {
 
     this.status = RuntimeStatus.Running;
 
-    for (const transition of this.getAutomatedTransition()) {
-      await this.executeTransition(transition);
-    }
+    await this.runAutomatedTransitions();
 
-    this.status = RuntimeStatus.Pending;
+    this.status = this.determineStatus();
   }
 
   public async execute (command: StateMachineCommands<SM>): Promise<void> {
@@ -70,9 +69,20 @@ export class MachineRuntime<SM extends AnyStateMachine> {
       throw new Error('@todo');
     }
 
-    await this.executeTransition(transition);
+    this.status = RuntimeStatus.Running;
 
+    await this.executeTransition(transition);
+    await this.runAutomatedTransitions();
+
+    this.status = this.determineStatus();
+  }
+
+  protected async runAutomatedTransitions (): Promise<void> {
     for (const transition of this.getAutomatedTransition()) {
+      if (this.determineStatus() !== RuntimeStatus.Pending) {
+        return;
+      }
+
       await this.executeTransition(transition);
     }
   }
@@ -92,17 +102,21 @@ export class MachineRuntime<SM extends AnyStateMachine> {
   protected async executeTransition (transition: AnyTrsn): Promise<void> {
     const target = transition.getTarget(this.state) as StateMachineState<SM>;
 
-    this.status = RuntimeStatus.Running;
-
     /** @todo Handle effects */
 
     await this.changeState(target);
-
-    this.status = RuntimeStatus.Pending;
   }
 
   protected async changeState (state: StateMachineState<SM>): Promise<void> {
     /** @todo Handle hooks */
     this.state = state;
+  }
+
+  protected determineStatus (): RuntimeStatus {
+    if (this.stateMachine.$config.final.includes(this.state)) {
+      return RuntimeStatus.Done;
+    }
+
+    return RuntimeStatus.Pending;
   }
 }

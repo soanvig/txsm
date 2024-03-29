@@ -24,6 +24,15 @@ const autoEndMachine = StateMachine.create({
   config: { initial: 'start', final: ['end'] },
 });
 
+const autoEndContinueMachine = StateMachine.create({
+  transitions: [
+    { from: 'start', to: 'intermediate' },
+    { from: 'intermediate', to: 'end' },
+    { from: 'end', to: 'unreachableEnd' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+});
+
 describe('MachineRuntime', () => {
   test('initialization', async () => {
     const runtime = StateMachine.create({
@@ -63,6 +72,17 @@ describe('MachineRuntime', () => {
 
     await runtime.start();
     assert.deepEqual(runtime.getState(), 'end');
-    assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
+    assert.deepEqual(runtime.getStatus(), RuntimeStatus.Done);
+  });
+
+  test('stop automated transitions upon reaching final state', async t => {
+    const runtime = autoEndContinueMachine.run({ context: {} });
+
+    assert.deepEqual(runtime.getState(), 'start');
+    assert.deepEqual(runtime.getStatus(), RuntimeStatus.Stopped);
+
+    await runtime.start();
+    assert.deepEqual(runtime.getState(), 'end');
+    assert.deepEqual(runtime.getStatus(), RuntimeStatus.Done);
   });
 });

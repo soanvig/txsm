@@ -20,61 +20,63 @@ export type MachineTypes<Trsns extends AnyTrsn> = {
   actors: Record<string, Actor>;
 }
 
-export class StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
-  private constructor (
-    public $config: MachineConfig<Trsn>,
-    public $transitions: Trsn[],
-    public $types: Types,
-    public $effects: { from: string, to: string, effect: Effect<Types> }[],
-  ) {}
+type AddEffectParamFrom<Trsn extends AnyTrsn> = Trsn extends Transition<infer From, any, any>
+  ? From
+  : never;
 
-  public setTypes<T extends MachineTypes<Trsn>> (types: T): StateMachine<Trsn, T> {
-    return new StateMachine(
-      this.$config,
-      this.$transitions,
-      types,
-      this.$effects,
-    );
-  }
+type AddEffectParamTo<Trsn extends AnyTrsn, From extends string> = Trsn extends Transition<infer TFrom, infer To, any>
+  ? TFrom extends From
+    ? To
+    : never
+  : never;
 
-  /** @todo */
-  public addEffect (from: unknown, to: unknown, effect: Effect<Types>): StateMachine<Trsn, Types> {
-    return new StateMachine(
-      this.$config,
-      this.$transitions,
-      types,
-      this.$effects.concat({ from, to, effect }),
-    );
-  }
+export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
+  $config: MachineConfig<Trsn>,
+  $transitions: Trsn[],
+  $types: Types,
+  $effects: { from: string, to: string, effect: Effect<Types> }[],
 
-  /** @todo */
-  public addHook (hookSettings: unknown, hook: unknown): StateMachine<Trsn, Types> {
-    throw new Error('TODO');
-  }
+  setTypes: <T extends MachineTypes<Trsn>> (types: T) => StateMachine<Trsn, T>;
+  addEffect: <From extends AddEffectParamFrom<Trsn>> (from: From, to: AddEffectParamTo<Trsn, NoInfer<From>>, effect: Effect<Types>) => StateMachine<Trsn, Types>
+  addHook: (hookSettings: unknown, hook: unknown) => StateMachine<Trsn, Types>
+  run: (input: { context: Types['context'] }) => MachineRuntime<Trsn, Types>
+}
 
-  public run (
-    input: { context: Types['context'] },
-  ): MachineRuntime<this> {
-    return new MachineRuntime(
-      this,
-      input.context,
-      this.$config.initial,
-    );
-  }
-
-  public static create<const T extends AnyTrsnObject> (
+export const StateMachine = {
+  create: <const T extends AnyTrsnObject> (
     params: {
       transitions: T[],
       config: MachineConfig<TrsnObjectToTrsn<T>>,
     },
-  ) {
-    return new StateMachine(
-      params.config,
-      params.transitions.map(t => Transition.fromObject(t)),
-      { context: {}, commands: {}, actors: {} },
-      [],
-    );
-  }
-}
+  ): StateMachine<TrsnObjectToTrsn<T>, { actors: {}, commands: {}, context: {} }> => {
+    const builder: StateMachine<TrsnObjectToTrsn<T>, { actors: {}, commands: {}, context: {} }> = {
+      $config: params.config,
+      $transitions: params.transitions.map(t => Transition.fromObject(t)),
+      $effects: [],
+      $types: { actors: {}, commands: {}, context: {} },
+      addEffect: (from, to, effect) => {
+        return {
+          ...builder,
+          $effects: builder.$effects.concat({ from, to, effect }),
+        };
+      },
+      addHook: () => {
+        throw new Error('@todo');
+      },
+      setTypes: types => {
+        return {
+          ...builder,
+          $types: types,
+        } as any;
+      },
+      run: input => {
+        return new MachineRuntime(builder, input.context, builder.$config.initial);
+      },
+    };
 
+    return builder;
+  },
+};
+
+export type AnyMachineTypes = MachineTypes<AnyTrsn>;
 export type AnyStateMachine = StateMachine<AnyTrsn, MachineTypes<AnyTrsn>>;

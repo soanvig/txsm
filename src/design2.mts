@@ -24,6 +24,8 @@ const stateMachine = StateMachine.create({
     rejectedBy: { userId: string } | null,
   },
   actors: {},
+}).addEffect('pending', 'onSigned', {
+  guard: ({ context }) => context.signatures.length >= context.signaturesRequired,
 });
 
 const runtime = stateMachine.run({

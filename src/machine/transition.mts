@@ -60,5 +60,6 @@ export type TrsnCommands<T extends AnyTrsn> = T extends Transition<any, any, inf
 /**
  * NamedTrsnObject | TrsnObject -> Trsn
  */
-export type TrsnObjectToTrsn<T extends AnyTrsnObject> = Transition<T['from'], T['to'], T extends NamedTrsnObject ? T['with'] : never>;
-
+export type TrsnObjectToTrsn<T extends AnyTrsnObject> = T extends infer R extends AnyTrsnObject
+  ? Transition<R['from'], R['to'], [R] extends [NamedTrsnObject] ? R['with'] : never>
+  : never;

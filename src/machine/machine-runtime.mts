@@ -5,9 +5,10 @@ import { type AnyTrsn, type TrsnStates } from './transition.mjs';
 
 type StateMachineContext<SM extends AnyStateMachine> = SM['$types']['context'];
 type StateMachineState<SM extends AnyStateMachine> = TrsnStates<ArrayValue<SM['$transitions']>>;
-type StateMachineCommands<SM extends AnyStateMachine> = SM['$types']['commands'] extends infer Cmds
-  ? { [K in keyof Cmds]: { type: K } & Cmds[K] }[keyof Cmds]
-  : never;
+type StateMachineCommands<SM extends AnyStateMachine> =
+  keyof SM['$types']['commands'] extends infer Keys extends string
+    ? { [K in Keys]: { type: K } & SM['$types']['commands'][K] }[Keys]
+    : never;
 
 export enum RuntimeStatus {
   Stopped = 'stopped',
@@ -36,8 +37,12 @@ export class MachineRuntime<SM extends AnyStateMachine> {
     return this.state;
   }
 
+  public getStatus (): RuntimeStatus {
+    return this.status;
+  }
+
   public async start (): Promise<void> {
-    if (this.state !== RuntimeStatus.Stopped) {
+    if (this.status !== RuntimeStatus.Stopped) {
       throw new Error('@todo');
     }
 
@@ -55,7 +60,7 @@ export class MachineRuntime<SM extends AnyStateMachine> {
       throw new Error('@todo');
     }
 
-    const transition = this.stateMachine.$transitions.find(t => t.is(this.state));
+    const transition = this.stateMachine.$transitions.find(t => t.is(command.type));
 
     if (!transition) {
       throw new Error('@todo');
@@ -66,6 +71,10 @@ export class MachineRuntime<SM extends AnyStateMachine> {
     }
 
     await this.executeTransition(transition);
+
+    for (const transition of this.getAutomatedTransition()) {
+      await this.executeTransition(transition);
+    }
   }
 
   protected* getAutomatedTransition (): Generator<AnyTrsn> {

@@ -1,1 +1,9 @@
 # TODO
+
+- [ ] handle final state
+- [ ] add snapshot support
+- [ ] add descriptive errors
+- [ ] handle effects
+- [ ] handle hooks
+- [ ] add history of states and operations
+- [ ] (optionally) detect loop of automated transitions

@@ -3,21 +3,21 @@ import { type ContextValue } from './context.mjs';
 import { MachineRuntime } from './machine-runtime.mjs';
 import { Transition, type AnyTrsn, type TrsnCommands, type TrsnObjectToTrsn, type TrsnStates } from './transition.mjs';
 
-type MachineConfig<T extends AnyTrsn> = {
+export type MachineConfig<T extends AnyTrsn> = {
   initial: Exclude<TrsnStates<T>, typeof Transition.ANY_STATE>,
   final: Exclude<TrsnStates<T>, typeof Transition.ANY_STATE>[],
 }
 
-type CommandPayload = Record<string, any>;
-type Actor = {};
+export type CommandPayload = Record<string, any>;
+export type Actor = {};
 
-type MachineTypes<Trsns extends AnyTrsn> = {
+export type MachineTypes<Trsns extends AnyTrsn> = {
   context: ContextValue;
   commands: Record<TrsnCommands<Trsns>, CommandPayload>;
   actors: Record<string, Actor>;
 }
 
-export class StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<any>> {
+export class StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
   private constructor (
     public $config: MachineConfig<Trsn>,
     public $transitions: Trsn[],

@@ -1,4 +1,4 @@
-import { StateMachine } from './machine/state-machine';
+import { StateMachine } from './machine/state-machine.mjs';
 
 const stateMachine = StateMachine.create({
   transitions: [

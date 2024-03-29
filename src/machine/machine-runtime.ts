@@ -77,7 +77,7 @@ export class MachineRuntime<SM extends AnyStateMachine> {
   }
 
   protected async executeTransition (transition: AnyTrsn): Promise<void> {
-    const target = transition.getTarget() as StateMachineState<SM>;
+    const target = transition.getTarget(this.state) as StateMachineState<SM>;
 
     this.status = RuntimeStatus.Running;
 

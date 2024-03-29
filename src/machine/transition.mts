@@ -1,4 +1,4 @@
-import { type AnyTrsnObject, type NamedTrsnObject, type TrsnObject } from './configuration-types';
+import { type AnyTrsnObject, type NamedTrsnObject, type TrsnObject } from './configuration-types.mjs';
 
 /**
  * Trsn seems to be abbreviation for Transition used in aircraft/technology

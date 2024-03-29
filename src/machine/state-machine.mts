@@ -1,7 +1,7 @@
-import { type AnyTrsnObject } from './configuration-types';
-import { type ContextValue } from './context';
-import { MachineRuntime } from './machine-runtime';
-import { Transition, type AnyTrsn, type TrsnCommands, type TrsnObjectToTrsn, type TrsnStates } from './transition';
+import { type AnyTrsnObject } from './configuration-types.mjs';
+import { type ContextValue } from './context.mjs';
+import { MachineRuntime } from './machine-runtime.mjs';
+import { Transition, type AnyTrsn, type TrsnCommands, type TrsnObjectToTrsn, type TrsnStates } from './transition.mjs';
 
 type MachineConfig<T extends AnyTrsn> = {
   initial: Exclude<TrsnStates<T>, typeof Transition.ANY_STATE>,

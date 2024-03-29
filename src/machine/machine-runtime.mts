@@ -1,7 +1,7 @@
-import { type ArrayValue } from '../helpers/types';
-import { Context } from './context';
-import { type AnyStateMachine } from './state-machine';
-import { type AnyTrsn, type TrsnStates } from './transition';
+import { type ArrayValue } from '../helpers/types.mjs';
+import { Context } from './context.mjs';
+import { type AnyStateMachine } from './state-machine.mjs';
+import { type AnyTrsn, type TrsnStates } from './transition.mjs';
 
 type StateMachineContext<SM extends AnyStateMachine> = SM['$types']['context'];
 type StateMachineState<SM extends AnyStateMachine> = TrsnStates<ArrayValue<SM['$transitions']>>;

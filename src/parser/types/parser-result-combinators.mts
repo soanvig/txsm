@@ -1,4 +1,4 @@
-import { type Concat } from './helpers';
+import { type Concat } from './helpers.mjs';
 import { type ParserFailResult, type ParserResult, type ParserSuccessResult } from './parser';
 
 /** ParserResult P1 -> ParserResult P2 -> `${P1}${P2}` || P1 || ParserFailResult */

@@ -1,4 +1,4 @@
-import { type Concat } from './helpers';
+import { type Concat } from './helpers.mjs';
 import { type ApplyParser, type Assume, type Parser, type ParserFailResult, type ParserSuccessResult } from './parser';
 import { type FlatParserJoin, type FlatParserSuccessJoin } from './parser-result-combinators';
 

@@ -1,6 +1,6 @@
-import { type Char, type WhiteSpace } from './defs';
-import { type Assume, type Parser, type ParserFailResult, type ParserSuccessResult } from './parser';
-import { type ManyParser, type MapConcatParser } from './parser-combinators';
+import { type Char, type WhiteSpace } from './defs.mjs';
+import { type ManyParser, type MapConcatParser } from './parser-combinators.mjs';
+import { type Assume, type Parser, type ParserFailResult, type ParserSuccessResult } from './parser.mjs';
 
 /** CharT -> [CharT] | ParserFailResult */
 export interface CharParser<CharT extends string> extends Parser {

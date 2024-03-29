@@ -5,6 +5,7 @@ env:
 parser: '@typescript-eslint/parser'
 parserOptions:
   ecmaVersion: 14
+  sourceType: module
   project:
     - ./tsconfig.json
 plugins:

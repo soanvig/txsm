@@ -10,6 +10,9 @@ export type MachineConfig<T extends AnyTrsn> = {
 
 export type CommandPayload = Record<string, any>;
 export type Actor = {};
+export type Effect<T extends MachineTypes<AnyTrsn>> = {
+  guard: (p: { context: T['context'] }) => boolean,
+}
 
 export type MachineTypes<Trsns extends AnyTrsn> = {
   context: ContextValue;
@@ -22,6 +25,7 @@ export class StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTr
     public $config: MachineConfig<Trsn>,
     public $transitions: Trsn[],
     public $types: Types,
+    public $effects: { from: string, to: string, effect: Effect<Types> }[],
   ) {}
 
   public setTypes<T extends MachineTypes<Trsn>> (types: T): StateMachine<Trsn, T> {
@@ -29,12 +33,18 @@ export class StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTr
       this.$config,
       this.$transitions,
       types,
+      this.$effects,
     );
   }
 
   /** @todo */
-  public addEffect (from: unknown, to: unknown, effect: unknown): StateMachine<Trsn, Types> {
-    throw new Error('TODO');
+  public addEffect (from: unknown, to: unknown, effect: Effect<Types>): StateMachine<Trsn, Types> {
+    return new StateMachine(
+      this.$config,
+      this.$transitions,
+      types,
+      this.$effects.concat({ from, to, effect }),
+    );
   }
 
   /** @todo */
@@ -62,6 +72,7 @@ export class StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTr
       params.config,
       params.transitions.map(t => Transition.fromObject(t)),
       { context: {}, commands: {}, actors: {} },
+      [],
     );
   }
 }

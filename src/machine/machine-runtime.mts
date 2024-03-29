@@ -32,6 +32,10 @@ export class MachineRuntime<SM extends AnyStateMachine> {
     this.status = RuntimeStatus.Stopped;
   }
 
+  public getState (): StateMachineState<SM> {
+    return this.state;
+  }
+
   public async start (): Promise<void> {
     if (this.state !== RuntimeStatus.Stopped) {
       throw new Error('@todo');
@@ -66,7 +70,7 @@ export class MachineRuntime<SM extends AnyStateMachine> {
 
   protected* getAutomatedTransition (): Generator<AnyTrsn> {
     while (true) {
-      const transition = this.stateMachine.$transitions.find(t => t.canTransitionFrom(this.state) && t.isAutomated());
+      const transition = this.stateMachine.$transitions.find(t => t.canTransitionFrom(this.state) && !t.isManual());
 
       if (transition) {
         yield transition;

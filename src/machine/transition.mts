@@ -30,8 +30,8 @@ export class Transition<From extends string, To extends string, Name extends str
     return this.name === name;
   }
 
-  public isAutomated (): boolean {
-    return this.name === null;
+  public isManual (): boolean {
+    return this.name !== null;
   }
 
   public static fromObject<T extends TrsnObject | NamedTrsnObject> (obj: T): TrsnObjectToTrsn<T> {

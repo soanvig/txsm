@@ -1,17 +1,26 @@
+import assert from 'assert';
 import test, { describe } from 'node:test';
 import { StateMachine } from '../src/machine/state-machine.mjs';
+import { Transition } from '../src/machine/transition.mjs';
 
-/** It is impossible to test in some sensible way as transitions and config are abstracted, but I'm a bit drunk now so maybe I'm wrong */
-describe.skip('StateMachine', () => {
-  test('#create', t => {
+describe('StateMachine', () => {
+  test('#create/.addEffect', t => {
+    const effects = [{ guard: function effectGuard1 () { return false; } }];
+    const transitions = [{ from: 's1', to: 's2' } as const];
+    const config = {
+      initial: 's1' as const,
+      final: ['s2' as const],
+    };
+
     const sm = StateMachine.create({
-      transitions: [
-        { from: 's1', to: 's2' },
-      ],
-      config: {
-        initial: 's1',
-        final: ['s2'],
-      },
-    });
+      transitions,
+      config,
+    }).addEffect('s1', 's2', effects[0]).getStateMachine();
+
+    assert.deepEqual(sm.$transitions, [Transition.fromObject(transitions[0])]);
+    assert.deepEqual(sm.$config, config);
+    assert.deepEqual(sm.$effects, [
+      { from: 's1', to: 's2', effect: effects[0] },
+    ]);
   });
 });

@@ -39,8 +39,9 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
 
 export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
   setTypes: <T extends MachineTypes<Trsn>> (types: T) => StateMachineBuilder<Trsn, T>;
-  addEffect: <From extends AddEffectParamFrom<Trsn>> (from: From, to: AddEffectParamTo<Trsn, NoInfer<From>>, effect: Effect<Types>) => StateMachineBuilder<Trsn, Types>
-  addHook: (hookSettings: unknown, hook: unknown) => StateMachineBuilder<Trsn, Types>
+  addEffect: <From extends AddEffectParamFrom<Trsn>> (from: From, to: AddEffectParamTo<Trsn, NoInfer<From>>, effect: Effect<Types>) => StateMachineBuilder<Trsn, Types>;
+  addHook: (hookSettings: unknown, hook: unknown) => StateMachineBuilder<Trsn, Types>;
+  getStateMachine(): StateMachine<Trsn, Types>;
   run: (input: { context: Types['context'] }) => MachineRuntime<Trsn, Types>
 };
 
@@ -60,6 +61,9 @@ const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineType
         ...stateMachine,
         $types: types as any,
       }) as any;
+    },
+    getStateMachine: () => {
+      return stateMachine;
     },
     run: input => {
       return new MachineRuntime(stateMachine, input.context, stateMachine.$config.initial);

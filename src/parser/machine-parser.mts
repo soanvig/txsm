@@ -1,6 +1,6 @@
-import { type ApplyParser, type UnwrapResultTotal } from './types/parser';
-import { type ChainParsers, type MapConcatParser, type OneOfParsers, type SeparatedByParser, type SeparatedByParser1, type WrapParser } from './types/parser-combinators';
-import { type DropAllWhitespaceParser, type StringParser, type WordParser } from './types/parsers';
+import { type ChainParsers, type MapConcatParser, type OneOfParsers, type SeparatedByParser, type SeparatedByParser1, type WrapParser } from './types/parser-combinators.mjs';
+import { type ApplyParser, type UnwrapResultTotal } from './types/parser.mjs';
+import { type DropAllWhitespaceParser, type StringParser, type WordParser } from './types/parsers.mjs';
 
 type NamelessArrowParser = StringParser<'->'>;
 type NamedArrowParser = MapConcatParser<ChainParsers<[StringParser<'-('>, WordParser, StringParser<')->'>]>>;

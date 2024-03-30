@@ -1,5 +1,5 @@
 import { type Concat } from './helpers.mjs';
-import { type ParserFailResult, type ParserResult, type ParserSuccessResult } from './parser';
+import { type ParserFailResult, type ParserResult, type ParserSuccessResult } from './parser.mjs';
 
 /** ParserResult P1 -> ParserResult P2 -> `${P1}${P2}` || P1 || ParserFailResult */
 export type FlatParserSuccessConcat<P1 extends ParserResult, P2 extends ParserResult> =

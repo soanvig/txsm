@@ -2,36 +2,7 @@ import assert from 'node:assert';
 import test, { describe } from 'node:test';
 import { RuntimeStatus } from '../src/machine/machine-runtime.mjs';
 import { StateMachine } from '../src/machine/state-machine.mjs';
-
-const lightMachine = StateMachine.create({
-  transitions: [
-    { from: 'green', to: 'yellow', with: 'stop' },
-    { from: 'yellow', to: 'red' }, //  auto transition
-    { from: 'red', to: 'green', with: 'walk' },
-  ],
-  config: { initial: 'red', final: [] },
-}).setTypes({
-  context: {} as {},
-  actors: {} as {},
-  commands: {} as { stop: {}, walk: {} },
-});
-
-const autoEndMachine = StateMachine.create({
-  transitions: [
-    { from: 'start', to: 'intermediate' },
-    { from: 'intermediate', to: 'end' },
-  ],
-  config: { initial: 'start', final: ['end'] },
-});
-
-const autoEndContinueMachine = StateMachine.create({
-  transitions: [
-    { from: 'start', to: 'intermediate' },
-    { from: 'intermediate', to: 'end' },
-    { from: 'end', to: 'unreachableEnd' },
-  ],
-  config: { initial: 'start', final: ['end'] },
-});
+import { autoEndContinueMachine, autoEndMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -84,5 +55,31 @@ describe('MachineRuntime', () => {
     await runtime.start();
     assert.deepEqual(runtime.getState(), 'end');
     assert.deepEqual(runtime.getStatus(), RuntimeStatus.Done);
+  });
+
+  test('it should select transitions based on guard (manual)', async t => {
+    const runtimeTrue = guardedManualTransitionMachine.run({ context: { value: true } });
+
+    await runtimeTrue.start();
+    await runtimeTrue.execute({ type: 'next' });
+    assert.deepEqual(runtimeTrue.getState(), 'valueTrue');
+
+    const runtimeFalse = guardedManualTransitionMachine.run({ context: { value: false } });
+
+    await runtimeFalse.start();
+    await runtimeFalse.execute({ type: 'next' });
+    assert.deepEqual(runtimeFalse.getState(), 'valueFalse');
+  });
+
+  test('it should select transitions based on guard (automated)', async t => {
+    const runtimeTrue = guardedAutomatedTransitionMachine.run({ context: { value: true } });
+
+    await runtimeTrue.start();
+    assert.deepEqual(runtimeTrue.getState(), 'valueTrue');
+
+    const runtimeFalse = guardedAutomatedTransitionMachine.run({ context: { value: false } });
+
+    await runtimeFalse.start();
+    assert.deepEqual(runtimeFalse.getState(), 'valueFalse');
   });
 });

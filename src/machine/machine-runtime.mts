@@ -43,7 +43,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
   public async start (): Promise<void> {
     if (this.status !== RuntimeStatus.Stopped) {
-      throw new Error('@todo');
+      throw new Error('@todo machine not stopped');
     }
 
     this.status = RuntimeStatus.Running;
@@ -55,17 +55,18 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
   public async execute (command: StateMachineCommands<Types>): Promise<void> {
     if (this.status !== RuntimeStatus.Pending) {
-      throw new Error('@todo');
+      throw new Error(`@todo machine not pending. it is: ${this.status}`);
     }
 
-    const transition = this.stateMachine.$transitions.find(t => t.is(command.type));
+    const transitions = this.stateMachine.$transitions.filter(t => t.is(command.type));
+    const transition = transitions.find(t => this.testGuardEffect(t));
 
     if (!transition) {
-      throw new Error('@todo');
+      throw new Error('@todo no transition');
     }
 
     if (!transition.canTransitionFrom(this.state)) {
-      throw new Error('@todo');
+      throw new Error('@todo unavailable transition');
     }
 
     this.status = RuntimeStatus.Running;
@@ -88,7 +89,9 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
   protected* getAutomatedTransition (): Generator<AnyTrsn> {
     while (true) {
-      const transition = this.stateMachine.$transitions.find(t => t.canTransitionFrom(this.state) && !t.isManual());
+      const transition = this.stateMachine.$transitions.find(t =>
+        t.canTransitionFrom(this.state) && !t.isManual() && this.testGuardEffect(t),
+      );
 
       if (transition) {
         yield transition;
@@ -117,5 +120,19 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     }
 
     return RuntimeStatus.Pending;
+  }
+
+  protected testGuardEffect (transition: AnyTrsn): boolean {
+    if (this.stateMachine.$effects.length === 0) {
+      return true;
+    }
+
+    const effect = this.stateMachine.$effects.find(e => transition.matches(e));
+
+    if (!effect || !transition.matches(effect) || !effect.effect.guard) {
+      return true;
+    }
+
+    return effect.effect.guard({ context: this.context.value });
   }
 }

@@ -30,6 +30,10 @@ export class Transition<From extends string, To extends string, Name extends str
     return this.name === name;
   }
 
+  public matches (params: { from: string, to: string }): boolean {
+    return this.from === params.from && this.to === params.to;
+  }
+
   public isManual (): boolean {
     return this.name !== null;
   }

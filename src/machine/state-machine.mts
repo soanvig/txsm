@@ -11,7 +11,7 @@ export type MachineConfig<T extends AnyTrsn> = {
 export type CommandPayload = Record<string, any>;
 export type Actor = {};
 export type Effect<T extends MachineTypes<AnyTrsn>> = {
-  guard: (p: { context: T['context'] }) => boolean,
+  guard?: (p: { context: T['context'] }) => boolean,
 }
 
 export type MachineTypes<Trsns extends AnyTrsn> = {
@@ -35,12 +35,39 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
   $transitions: Trsn[],
   $types: Types,
   $effects: { from: string, to: string, effect: Effect<Types> }[],
-
-  setTypes: <T extends MachineTypes<Trsn>> (types: T) => StateMachine<Trsn, T>;
-  addEffect: <From extends AddEffectParamFrom<Trsn>> (from: From, to: AddEffectParamTo<Trsn, NoInfer<From>>, effect: Effect<Types>) => StateMachine<Trsn, Types>
-  addHook: (hookSettings: unknown, hook: unknown) => StateMachine<Trsn, Types>
-  run: (input: { context: Types['context'] }) => MachineRuntime<Trsn, Types>
 }
+
+export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
+  setTypes: <T extends MachineTypes<Trsn>> (types: T) => StateMachineBuilder<Trsn, T>;
+  addEffect: <From extends AddEffectParamFrom<Trsn>> (from: From, to: AddEffectParamTo<Trsn, NoInfer<From>>, effect: Effect<Types>) => StateMachineBuilder<Trsn, Types>
+  addHook: (hookSettings: unknown, hook: unknown) => StateMachineBuilder<Trsn, Types>
+  run: (input: { context: Types['context'] }) => MachineRuntime<Trsn, Types>
+};
+
+const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>>(stateMachine: StateMachine<Trsn, Types>): StateMachineBuilder<Trsn, Types> => {
+  const builder: StateMachineBuilder<Trsn, Types> = {
+    addEffect: (from, to, effect) => {
+      return makeStateMachineBuilder({
+        ...stateMachine,
+        $effects: stateMachine.$effects.concat({ from, to, effect }),
+      });
+    },
+    addHook: () => {
+      throw new Error('@todo');
+    },
+    setTypes: types => {
+      return makeStateMachineBuilder({
+        ...stateMachine,
+        $types: types as any,
+      }) as any;
+    },
+    run: input => {
+      return new MachineRuntime(stateMachine, input.context, stateMachine.$config.initial);
+    },
+  };
+
+  return builder;
+};
 
 export const StateMachine = {
   create: <const T extends AnyTrsnObject> (
@@ -48,33 +75,17 @@ export const StateMachine = {
       transitions: T[],
       config: MachineConfig<TrsnObjectToTrsn<T>>,
     },
-  ): StateMachine<TrsnObjectToTrsn<T>, { actors: {}, commands: {}, context: {} }> => {
-    const builder: StateMachine<TrsnObjectToTrsn<T>, { actors: {}, commands: {}, context: {} }> = {
+  ): StateMachineBuilder<TrsnObjectToTrsn<T>, { actors: {}, commands: {}, context: {} }> => {
+    return makeStateMachineBuilder({
       $config: params.config,
-      $transitions: params.transitions.map(t => Transition.fromObject(t)),
       $effects: [],
-      $types: { actors: {}, commands: {}, context: {} },
-      addEffect: (from, to, effect) => {
-        return {
-          ...builder,
-          $effects: builder.$effects.concat({ from, to, effect }),
-        };
+      $transitions: params.transitions.map(t => Transition.fromObject(t)),
+      $types: {
+        actors: {},
+        commands: {},
+        context: {},
       },
-      addHook: () => {
-        throw new Error('@todo');
-      },
-      setTypes: types => {
-        return {
-          ...builder,
-          $types: types,
-        } as any;
-      },
-      run: input => {
-        return new MachineRuntime(builder, input.context, builder.$config.initial);
-      },
-    };
-
-    return builder;
+    });
   },
 };
 

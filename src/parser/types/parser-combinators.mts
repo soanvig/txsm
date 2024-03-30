@@ -1,6 +1,6 @@
 import { type Concat } from './helpers.mjs';
-import { type ApplyParser, type Assume, type Parser, type ParserFailResult, type ParserSuccessResult } from './parser';
-import { type FlatParserJoin, type FlatParserSuccessJoin } from './parser-result-combinators';
+import { type FlatParserJoin, type FlatParserSuccessJoin } from './parser-result-combinators.mjs';
+import { type ApplyParser, type Assume, type Parser, type ParserFailResult, type ParserSuccessResult } from './parser.mjs';
 
 /**
  * All parsers need to success (due to FlatParserSucessJoin).

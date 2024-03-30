@@ -1,4 +1,5 @@
 import { Context } from './context.mjs';
+import { ErrorCode, MachineError } from './errors.mjs';
 import { type AnyMachineTypes, type MachineTypes, type StateMachine } from './state-machine.mjs';
 import { type AnyTrsn, type Transition, type TrsnStates } from './transition.mjs';
 
@@ -43,7 +44,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
   public async start (): Promise<void> {
     if (this.status !== RuntimeStatus.Stopped) {
-      throw new Error('@todo machine not stopped');
+      throw new MachineError(ErrorCode.NotStopped, { currentStatus: this.status });
     }
 
     this.status = RuntimeStatus.Running;
@@ -55,18 +56,18 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
   public async execute (command: StateMachineCommands<Types>): Promise<void> {
     if (this.status !== RuntimeStatus.Pending) {
-      throw new Error(`@todo machine not pending. it is: ${this.status}`);
+      throw new MachineError(ErrorCode.NotPending, { currentStatus: this.status });
     }
 
     const transitions = this.stateMachine.$transitions.filter(t => t.is(command.type));
     const transition = transitions.find(t => this.testGuardEffect(t));
 
     if (!transition) {
-      throw new Error('@todo no transition');
+      throw new MachineError(ErrorCode.NoTransition, {});
     }
 
     if (!transition.canTransitionFrom(this.state)) {
-      throw new Error('@todo unavailable transition');
+      throw new MachineError(ErrorCode.TransitionIncorrectState, { currentState: this.state });
     }
 
     this.status = RuntimeStatus.Running;

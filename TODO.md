@@ -2,7 +2,7 @@
 
 - [x] handle final state
 - [ ] add snapshot support
-- [ ] add descriptive errors
+- [x] add descriptive errors
 - [x] handle effects (guards)
 - [ ] add more tests to effects (guards)
 - [ ] handle effects (actions)

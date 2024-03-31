@@ -81,3 +81,29 @@ export const makeEffectCallbackMachine = (cb: () => void) => StateMachine.create
       () => cb(),
     ],
   });
+
+export const counterMachine = StateMachine.create({
+  transitions: [
+    { from: 'pending', to: 'incremented', with: 'increment' },
+    { from: 'pending', to: 'incrementedTwice', with: 'incrementTwice' },
+    { from: 'incremented', to: 'pending' },
+    { from: 'incrementedTwice', to: 'pending' },
+  ],
+  config: { initial: 'pending', final: [] },
+}).setTypes({
+  context: {} as { value: number },
+  actors: {},
+  commands: {
+    increment: {},
+    incrementTwice: {},
+  },
+}).addEffect('pending', 'incremented', {
+  actions: [
+    ({ context, assign }) => assign({ value: context.value + 1 }),
+  ],
+}).addEffect('pending', 'incrementedTwice', {
+  actions: [
+    ({ context, assign }) => assign({ value: context.value + 1 }),
+    ({ context, assign }) => assign({ value: context.value + 1 }),
+  ],
+});

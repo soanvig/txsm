@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import test, { describe } from 'node:test';
 import { RuntimeStatus } from '../src/machine/machine-runtime.mjs';
 import { StateMachine } from '../src/machine/state-machine.mjs';
-import { autoEndContinueMachine, autoEndMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine } from './machines.mjs';
+import { autoEndContinueMachine, autoEndMachine, counterMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -95,6 +95,22 @@ describe('MachineRuntime', () => {
       await runtime.start();
       assert.deepEqual(counter, 3);
       assert.deepEqual(runtime.getState(), 'end');
+    });
+
+    test('it should assign values to context', async t => {
+      const runtime = counterMachine.run({ context: { value: 1 } });
+
+      await runtime.start();
+      assert.deepEqual(runtime.getContext().value, 1);
+
+      await runtime.execute({ type: 'increment' });
+      assert.deepEqual(runtime.getContext().value, 2);
+
+      await runtime.execute({ type: 'incrementTwice' });
+      assert.deepEqual(runtime.getContext().value, 4);
+
+      await runtime.execute({ type: 'increment' });
+      assert.deepEqual(runtime.getContext().value, 5);
     });
   });
 });

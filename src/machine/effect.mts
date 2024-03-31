@@ -25,7 +25,7 @@ export class Effect<Types extends AnyMachineTypes> {
     return transition.matches({ from: this.from, to: this.to });
   }
 
-  public async* execute <P extends { context: Context<Types['context']> }> (): AsyncGenerator<EffectResult, void, P> {
+  public async* execute <P extends { context: Context<Types['context']> }> (): AsyncGenerator<EffectResult<Types>, void, P> {
     const actions = this.effect.actions;
 
     if (!actions) {
@@ -35,9 +35,15 @@ export class Effect<Types extends AnyMachineTypes> {
     let { context } = yield { type: EffectResultType.Started };
 
     for (const action of actions) {
-      await action({ context });
+      let newContext: Partial<Types['context']> | null = null;
+
+      await action({ context: context.value, assign: c => { newContext = c; } });
 
       ({ context } = yield { type: EffectResultType.Executed });
+
+      if (newContext) {
+        ({ context } = yield { type: EffectResultType.ContextUpdated, newContext });
+      }
     }
   }
 
@@ -53,8 +59,10 @@ export class Effect<Types extends AnyMachineTypes> {
 export enum EffectResultType {
   Started,
   Executed,
+  ContextUpdated,
 }
 
-export type EffectResult =
+export type EffectResult<Types extends AnyMachineTypes> =
   | { type: EffectResultType.Started }
-  | { type: EffectResultType.Executed };
+  | { type: EffectResultType.Executed }
+  | { type: EffectResultType.ContextUpdated, newContext: Partial<Types['context']> };

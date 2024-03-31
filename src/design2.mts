@@ -26,6 +26,8 @@ const stateMachine = StateMachine.create({
   actors: {},
 }).addEffect('pending', 'onSigned', {
   guard: ({ context }) => context.signatures.length >= context.signaturesRequired,
+  actions: [
+  ],
 });
 
 const runtime = stateMachine.run({

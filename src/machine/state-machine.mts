@@ -8,11 +8,14 @@ export type MachineConfig<T extends AnyTrsn> = {
   final: Exclude<TrsnStates<T>, typeof Transition.ANY_STATE>[],
 }
 
+export type ActionPayload<T extends AnyMachineTypes> = { context: T['context'], assign: (context: Partial<T['context']>) => void };
+export type Action<T extends AnyMachineTypes> = (p: ActionPayload<T>) => (void | Promise<void>)
+
 export type CommandPayload = Record<string, any>;
 export type Actor = {};
 export type MachineEffect<T extends MachineTypes<AnyTrsn>> = {
   guard?: (p: { context: T['context'] }) => boolean,
-  actions?: Array<(p: { context: T['context'] }) => (void | Promise<void>)>,
+  actions?: Array<Action<T>>,
 }
 
 export type MachineTypes<Trsns extends AnyTrsn> = {

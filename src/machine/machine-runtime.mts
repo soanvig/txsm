@@ -1,7 +1,7 @@
 import { findMap } from '../helpers/array.mjs';
 import { asyncIterate } from '../helpers/iterator.mjs';
 import { Context } from './context.mjs';
-import { Effect } from './effect.mjs';
+import { Effect, EffectResultType, type EffectResult } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
 import { type AnyMachineTypes, type MachineTypes, type StateMachine } from './state-machine.mjs';
 import { type AnyTrsn, type Transition, type TrsnStates } from './transition.mjs';
@@ -43,6 +43,10 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
   public getState (): StateMachineState<Trsn> {
     return this.state;
+  }
+
+  public getContext (): Types['context'] {
+    return this.context.value;
   }
 
   public getStatus (): RuntimeStatus {
@@ -112,9 +116,13 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected async executeTransition ({ effect, transition }: TrsnWithEffect<Types>): Promise<void> {
     const target = transition.getTarget(this.state) as StateMachineState<Trsn>;
 
-    await asyncIterate(effect.execute(), { context: this.context }, _result => ({
-      context: this.context,
-    }));
+    await asyncIterate(effect.execute(), { context: this.context }, async result => {
+      await this.processEffectResult(result);
+
+      return {
+        context: this.context,
+      };
+    });
 
     await this.changeState(target);
   }
@@ -149,5 +157,17 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     }
 
     return { transition, effect };
+  }
+
+  protected async processEffectResult (effectResult: EffectResult<Types>): Promise<void> {
+    switch (effectResult.type) {
+      case EffectResultType.ContextUpdated:
+        this.context = this.context.merge(effectResult.newContext);
+        break;
+      case EffectResultType.Executed: break;
+      case EffectResultType.Started: break;
+      default:
+        const _: never = effectResult;
+    }
   }
 }

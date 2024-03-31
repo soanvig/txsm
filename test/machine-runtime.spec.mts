@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import test, { describe } from 'node:test';
 import { RuntimeStatus } from '../src/machine/machine-runtime.mjs';
 import { StateMachine } from '../src/machine/state-machine.mjs';
-import { autoEndContinueMachine, autoEndMachine, counterMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine } from './machines.mjs';
+import { actorAssignMachine, autoEndContinueMachine, autoEndMachine, counterMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -111,6 +111,30 @@ describe('MachineRuntime', () => {
 
       await runtime.execute({ type: 'increment' });
       assert.deepEqual(runtime.getContext().value, 5);
+    });
+
+    test('it should properly merge context', async t => {
+      const runtime = mergeContextMachine.run({ context: { value0: true, value1: false, value2: [false], value3: { subValue1: true } } });
+
+      await runtime.start();
+      assert.deepEqual(runtime.getContext(), {
+        value0: true,
+        value1: true,
+        value2: [true],
+        value3: { subValue2: true },
+      });
+    });
+
+    test('it should call actor,  retrieve its result and assign to context', async t => {
+      const runtime = actorAssignMachine.run({
+        context: { value: 4 },
+        actors: {
+          call: value => value + 3,
+        },
+      });
+
+      await runtime.start();
+      assert.deepEqual(runtime.getContext().value, 7);
     });
   });
 });

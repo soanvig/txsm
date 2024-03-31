@@ -1,6 +1,9 @@
+import { Action, ActionType, type ActionResult, type ActionStepPayload } from './action.mjs';
 import { type Context } from './context.mjs';
 import { type AnyMachineTypes, type MachineEffect } from './state-machine.mjs';
 import { type AnyTrsn } from './transition.mjs';
+
+type EffectExecuteInput<Types extends AnyMachineTypes> = { context: Context<Types['context']> };
 
 export class Effect<Types extends AnyMachineTypes> {
   protected constructor (
@@ -17,7 +20,7 @@ export class Effect<Types extends AnyMachineTypes> {
     );
   }
 
-  public static emptyFor (transition: AnyTrsn): Effect<AnyMachineTypes> {
+  public static emptyFor<Types extends AnyMachineTypes> (transition: AnyTrsn): Effect<Types> {
     return Effect.fromObject({ ...transition.getTransition(), effect: {} });
   }
 
@@ -25,26 +28,18 @@ export class Effect<Types extends AnyMachineTypes> {
     return transition.matches({ from: this.from, to: this.to });
   }
 
-  public async* execute <P extends { context: Context<Types['context']> }> (): AsyncGenerator<EffectResult<Types>, void, P> {
-    const actions = this.effect.actions;
-
-    if (!actions) {
+  public async* execute ({ context }: ActionStepPayload<Types, any>): AsyncGenerator<ActionResult<Types>, void, ActionStepPayload<Types, any>> {
+    if (!this.effect.action) {
       return;
     }
 
-    let { context } = yield { type: EffectResultType.Started };
+    const collectedAction = this.effect.action({
+      context: context.value,
+      assign: newContext => Action.from({ type: ActionType.Assign, newContext }),
+      invoke: (actorName, ...parameters) => Action.from({ type: ActionType.Invoke, actorName, parameters }),
+    });
 
-    for (const action of actions) {
-      let newContext: Partial<Types['context']> | null = null;
-
-      await action({ context: context.value, assign: c => { newContext = c; } });
-
-      ({ context } = yield { type: EffectResultType.Executed });
-
-      if (newContext) {
-        ({ context } = yield { type: EffectResultType.ContextUpdated, newContext });
-      }
-    }
+    yield* collectedAction.iterate({ context });
   }
 
   public testGuard (payload: { context: Context<Types['context']> }): boolean {
@@ -55,14 +50,3 @@ export class Effect<Types extends AnyMachineTypes> {
     return true;
   }
 }
-
-export enum EffectResultType {
-  Started,
-  Executed,
-  ContextUpdated,
-}
-
-export type EffectResult<Types extends AnyMachineTypes> =
-  | { type: EffectResultType.Started }
-  | { type: EffectResultType.Executed }
-  | { type: EffectResultType.ContextUpdated, newContext: Partial<Types['context']> };

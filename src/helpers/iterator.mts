@@ -1,12 +1,21 @@
 /**
  * This modifies iterator, because it calls next function on it.
  */
-export const asyncIterate = async <T, N>(iterator: AsyncIterator<T, void, N>, initial: NoInfer<N>, cb: (v: T) => NoInfer<N> | Promise<NoInfer<N>>) => {
-  const result = await iterator.next(initial);
+export const asyncFeedbackIterate = async <T, N>(iterator: AsyncGenerator<T, void, N>, cb: (v: T) => NoInfer<N> | Promise<NoInfer<N>>) => {
+  let result = await iterator.next();
 
-  if (result.done) {
-    return;
+  while (result.done === false) {
+    result = await iterator.next(await cb(result.value));
   }
+};
 
-  await asyncIterate(iterator, await cb(result.value), cb);
+/**
+ * This modifies iterator, because it calls next function on it.
+ */
+export const feedbackIterate = <T, N>(iterator: Iterator<T, void, N>, cb: (v: T) => NoInfer<N>) => {
+  let result = iterator.next();
+
+  while (result.done === false) {
+    result = iterator.next(cb(result.value));
+  }
 };

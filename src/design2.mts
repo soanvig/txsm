@@ -23,11 +23,14 @@ const stateMachine = StateMachine.create({
     signatures: { userId: string }[],
     rejectedBy: { userId: string } | null,
   },
-  actors: {},
+  actors: {} as {
+    test: () => Promise<number>,
+  },
 }).addEffect('pending', 'onSigned', {
   guard: ({ context }) => context.signatures.length >= context.signaturesRequired,
-  actions: [
-  ],
+  action: ({ invoke, assign }) =>
+    invoke('test')
+      .then(({ result }) => assign({ signaturesRequired: result })),
 });
 
 const runtime = stateMachine.run({
@@ -35,6 +38,9 @@ const runtime = stateMachine.run({
     rejectedBy: null,
     signatures: [],
     signaturesRequired: 1,
+  },
+  actors: {
+    test: () => Promise.resolve(1),
   },
 });
 

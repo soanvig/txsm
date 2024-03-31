@@ -7,6 +7,7 @@
 - [ ] add more tests to effects (guards)
 - [x] handle effects (actions)
 - [x] handle update context action
+- [ ] add more tests to actions
 - [ ] handle hooks
 - [ ] handle nested machines
 - [ ] add history of states and operations
@@ -14,6 +15,8 @@
 - [ ] validate if final state doesn't have automated transition from it (execution stops there, but validation might help debugging) 
 - [ ] validate if there is only one effect per transition
 - [ ] validate if transition name is used only once per transition
-- [ ] test proper context merging in assign actions
-- [ ] (requires snapshots) add rollback
+- [x] test proper context merging in assign actions
+- [ ] test guards, actions and actors throwing
+- [ ] add rollback - using snapshot OR create a copy of machine runtime under the hood, that will execute the code
+- [ ] (optionally) freeze context before passing it down to the guards, actions, etc
 - [ ] handle picking a transition that matches a guard

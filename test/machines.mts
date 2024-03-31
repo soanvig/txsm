@@ -1,4 +1,5 @@
 import { setTimeout } from 'timers/promises';
+import { Action } from '../src/machine/action.mjs';
 import { StateMachine } from '../src/machine/state-machine.mjs';
 
 export const lightMachine = StateMachine.create({
@@ -72,14 +73,10 @@ export const makeEffectCallbackMachine = (cb: () => void) => StateMachine.create
   config: { initial: 'start', final: ['end'] },
 })
   .addEffect('start', 'end', {
-    actions: [
-      () => cb(),
-      async () => {
-        await setTimeout(5);
-        cb();
-      },
-      () => cb(),
-    ],
+    action: () =>
+      Action.from(cb)
+        .then(() => setTimeout(5).then(cb))
+        .then(cb),
   });
 
 export const counterMachine = StateMachine.create({
@@ -98,12 +95,41 @@ export const counterMachine = StateMachine.create({
     incrementTwice: {},
   },
 }).addEffect('pending', 'incremented', {
-  actions: [
-    ({ context, assign }) => assign({ value: context.value + 1 }),
-  ],
+  action: ({ context, assign }) => assign({ value: context.value + 1 }),
 }).addEffect('pending', 'incrementedTwice', {
-  actions: [
-    ({ context, assign }) => assign({ value: context.value + 1 }),
-    ({ context, assign }) => assign({ value: context.value + 1 }),
+  action: ({ assign, context }) => assign({ value: context.value + 1 })
+    .then(({ context }) => assign({ value: context.value + 1 })),
+});
+
+export const actorAssignMachine = StateMachine.create({
+  transitions: [
+    { from: 'pending', to: 'end' },
   ],
+  config: { initial: 'pending', final: ['end'] },
+}).setTypes({
+  context: {} as { value: number },
+  actors: {} as {
+    call: (value: number) => number
+  },
+  commands: {},
+}).addEffect('pending', 'end', {
+  action: ({ context, invoke, assign }) =>
+    invoke('call', context.value)
+      .then(({ result }) => assign({ value: result })),
+});
+
+export const mergeContextMachine = StateMachine.create({
+  transitions: [
+    { from: 'pending', to: 'end' },
+  ],
+  config: { initial: 'pending', final: ['end'] },
+}).setTypes({
+  context: {} as { value0: boolean, value1: boolean, value2: boolean[], value3: { subValue1?: boolean, subValue2?: boolean } },
+  actors: {} as {},
+  commands: {},
+}).addEffect('pending', 'end', {
+  action: ({ assign }) =>
+    assign({ value1: true })
+      .then(assign({ value2: [true] }))
+      .then(assign({ value3: { subValue2: true }})),
 });

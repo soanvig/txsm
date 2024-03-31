@@ -1,7 +1,8 @@
 import { findMap } from '../helpers/array.mjs';
-import { asyncIterate } from '../helpers/iterator.mjs';
+import { asyncFeedbackIterate } from '../helpers/iterator.mjs';
+import { ActionType, type ActionResult, type ActionStepPayload } from './action.mjs';
 import { Context } from './context.mjs';
-import { Effect, EffectResultType, type EffectResult } from './effect.mjs';
+import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
 import { type AnyMachineTypes, type MachineTypes, type StateMachine } from './state-machine.mjs';
 import { type AnyTrsn, type Transition, type TrsnStates } from './transition.mjs';
@@ -28,17 +29,20 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected state: StateMachineState<Trsn>;
   protected status: RuntimeStatus;
   protected effects: Effect<Types>[];
+  protected actors: Types['actors'];
 
   constructor (
     stateMachine: StateMachine<Trsn, Types>,
     context: StateMachineContext<Types>,
     state: StateMachineState<Trsn>,
+    actors: Types['actors'],
   ) {
     this.stateMachine = stateMachine;
     this.context = Context.create(context);
     this.state = state;
     this.status = RuntimeStatus.Stopped;
     this.effects = stateMachine.$effects.map(Effect.fromObject);
+    this.actors = actors;
   }
 
   public getState (): StateMachineState<Trsn> {
@@ -116,12 +120,8 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected async executeTransition ({ effect, transition }: TrsnWithEffect<Types>): Promise<void> {
     const target = transition.getTarget(this.state) as StateMachineState<Trsn>;
 
-    await asyncIterate(effect.execute(), { context: this.context }, async result => {
-      await this.processEffectResult(result);
-
-      return {
-        context: this.context,
-      };
+    await asyncFeedbackIterate(effect.execute({ context: this.context, result: undefined }), async result => {
+      return await this.processActionResult(result);
     });
 
     await this.changeState(target);
@@ -159,15 +159,30 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     return { transition, effect };
   }
 
-  protected async processEffectResult (effectResult: EffectResult<Types>): Promise<void> {
-    switch (effectResult.type) {
-      case EffectResultType.ContextUpdated:
-        this.context = this.context.merge(effectResult.newContext);
-        break;
-      case EffectResultType.Executed: break;
-      case EffectResultType.Started: break;
+  protected async processActionResult (actionResult: ActionResult<Types>): Promise<ActionStepPayload<Types, any>> {
+    switch (actionResult.type) {
+      case ActionType.Call:
+        return {
+          result: await actionResult.result,
+          context: this.context.value,
+        };
+      case ActionType.Assign:
+        this.context = this.context.merge(actionResult.newContext);
+        return {
+          result: undefined,
+          context: this.context.value,
+        };
+      case ActionType.Invoke:
+        /** @TODO throw if actor doesn't exist (no typescript) */
+        const actor = this.actors[actionResult.actorName];
+
+        return {
+          result: await actor(...actionResult.parameters),
+          context: this.context.value,
+        };
       default:
-        const _: never = effectResult;
+        const _: never = actionResult;
+        throw new Error(`Unreachable (actionResult.type=${_})`);
     }
   }
 }

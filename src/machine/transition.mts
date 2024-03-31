@@ -38,6 +38,13 @@ export class Transition<From extends string, To extends string, Name extends str
     return this.name !== null;
   }
 
+  public getTransition (): { from: string, to: string } {
+    return {
+      from: this.from,
+      to: this.to,
+    };
+  }
+
   public static fromObject<T extends TrsnObject | NamedTrsnObject> (obj: T): TrsnObjectToTrsn<T> {
     return new Transition(
       obj.from,

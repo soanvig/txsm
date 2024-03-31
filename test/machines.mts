@@ -1,3 +1,4 @@
+import { setTimeout } from 'timers/promises';
 import { StateMachine } from '../src/machine/state-machine.mjs';
 
 export const lightMachine = StateMachine.create({
@@ -63,3 +64,20 @@ export const guardedAutomatedTransitionMachine = StateMachine.create({
 }).addEffect('start', 'valueTrue', {
   guard: ({ context }) => context.value === true,
 });
+
+export const makeEffectCallbackMachine = (cb: () => void) => StateMachine.create({
+  transitions: [
+    { from: 'start', to: 'end' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+})
+  .addEffect('start', 'end', {
+    actions: [
+      () => cb(),
+      async () => {
+        await setTimeout(5);
+        cb();
+      },
+      () => cb(),
+    ],
+  });

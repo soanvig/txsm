@@ -10,8 +10,9 @@ export type MachineConfig<T extends AnyTrsn> = {
 
 export type CommandPayload = Record<string, any>;
 export type Actor = {};
-export type Effect<T extends MachineTypes<AnyTrsn>> = {
+export type MachineEffect<T extends MachineTypes<AnyTrsn>> = {
   guard?: (p: { context: T['context'] }) => boolean,
+  actions?: Array<(p: { context: T['context'] }) => (void | Promise<void>)>,
 }
 
 export type MachineTypes<Trsns extends AnyTrsn> = {
@@ -34,12 +35,12 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
   $config: MachineConfig<Trsn>,
   $transitions: Trsn[],
   $types: Types,
-  $effects: { from: string, to: string, effect: Effect<Types> }[],
+  $effects: { from: string, to: string, effect: MachineEffect<Types> }[],
 }
 
 export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
   setTypes: <T extends MachineTypes<Trsn>> (types: T) => StateMachineBuilder<Trsn, T>;
-  addEffect: <From extends AddEffectParamFrom<Trsn>> (from: From, to: AddEffectParamTo<Trsn, NoInfer<From>>, effect: Effect<Types>) => StateMachineBuilder<Trsn, Types>;
+  addEffect: <From extends AddEffectParamFrom<Trsn>> (from: From, to: AddEffectParamTo<Trsn, NoInfer<From>>, effect: MachineEffect<Types>) => StateMachineBuilder<Trsn, Types>;
   addHook: (hookSettings: unknown, hook: unknown) => StateMachineBuilder<Trsn, Types>;
   getStateMachine(): StateMachine<Trsn, Types>;
   run: (input: { context: Types['context'] }) => MachineRuntime<Trsn, Types>

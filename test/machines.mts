@@ -66,6 +66,44 @@ export const guardedAutomatedTransitionMachine = StateMachine.create({
   guard: ({ context }) => context.value === true,
 });
 
+export const multipleGuardsAutomatedTransitionMachine = StateMachine.create({
+  transitions: [
+    { from: 'start', to: 'value1' },
+    { from: 'start', to: 'value2' },
+    { from: 'start', to: 'value3' },
+  ],
+  config: { initial: 'start', final: ['value1', 'value2', 'value3'] },
+}).setTypes({
+  actors: {},
+  commands: {},
+  context: {} as {
+    value: number;
+  },
+})
+  .addEffect('start', 'value1', { guard: ({ context }) => context.value === 1 })
+  .addEffect('start', 'value2', { guard: ({ context }) => context.value === 2 })
+  .addEffect('start', 'value3', { guard: ({ context }) => context.value === 3 });
+
+export const multipleGuardsManualTransitionMachine = StateMachine.create({
+  transitions: [
+    { from: 'start', to: 'value1', with: 'run' },
+    { from: 'start', to: 'value2', with: 'run' },
+    { from: 'start', to: 'value3', with: 'run' },
+  ],
+  config: { initial: 'start', final: ['value1', 'value2', 'value3'] },
+}).setTypes({
+  actors: {},
+  commands: {} as {
+    run: {}
+  },
+  context: {} as {
+    value: number;
+  },
+})
+  .addEffect('start', 'value1', { guard: ({ context }) => context.value === 1 })
+  .addEffect('start', 'value2', { guard: ({ context }) => context.value === 2 })
+  .addEffect('start', 'value3', { guard: ({ context }) => context.value === 3 });
+
 export const makeEffectCallbackMachine = (cb: () => void) => StateMachine.create({
   transitions: [
     { from: 'start', to: 'end' },

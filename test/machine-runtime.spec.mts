@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import test, { describe } from 'node:test';
 import { RuntimeStatus } from '../src/machine/machine-runtime.mjs';
 import { StateMachine } from '../src/machine/state-machine.mjs';
-import { actorAssignMachine, autoEndContinueMachine, autoEndMachine, counterMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine } from './machines.mjs';
+import { actorAssignMachine, autoEndContinueMachine, autoEndMachine, counterMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -84,6 +84,34 @@ describe('MachineRuntime', () => {
 
       await runtimeFalse.start();
       assert.deepEqual(runtimeFalse.getState(), 'valueFalse');
+    });
+
+    test('it should select transition based on one of multiple guards (manual)', async t => {
+      for (const value of [1, 2, 3]) {
+        const runtime = multipleGuardsManualTransitionMachine.run({ context: { value }});
+
+        await runtime.start();
+        await runtime.execute({ type: 'run' });
+
+        assert.deepEqual(runtime.getState(), `value${value}`);
+      }
+
+      const noTransitionRuntime = multipleGuardsManualTransitionMachine.run({ context: { value: 0 }});
+      await noTransitionRuntime.start();
+      await assert.rejects(noTransitionRuntime.execute({ type: 'run' }));
+    });
+
+    test('it should select transition based on one of multiple guards (automated)', async t => {
+      for (const value of [1, 2, 3]) {
+        const runtime = multipleGuardsAutomatedTransitionMachine.run({ context: { value }});
+
+        await runtime.start();
+        assert.deepEqual(runtime.getState(), `value${value}`);
+      }
+
+      const noTransitionRuntime = multipleGuardsAutomatedTransitionMachine.run({ context: { value: 0 }});
+      await noTransitionRuntime.start();
+      assert.deepEqual(noTransitionRuntime.getState(), 'start');
     });
   });
 

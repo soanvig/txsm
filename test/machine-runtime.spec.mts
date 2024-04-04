@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import test, { describe } from 'node:test';
 import { Machine } from '../src/machine/state-machine.mjs';
 import { RuntimeStatus } from '../src/machine/types.mjs';
-import { actorAssignMachine, anyExitAnyEntryHook, autoEndContinueMachine, autoEndMachine, counterMachine, exitEntryHook, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine } from './machines.mjs';
+import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, snapshotMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -168,7 +168,7 @@ describe('MachineRuntime', () => {
 
   describe('Hook action', () => {
     test('it should call entry and exit hook', async () => {
-      const runtime = exitEntryHook.run({ context: { entry: 0, exit: 0 }});
+      const runtime = exitEntryHookMachine.run({ context: { entry: 0, exit: 0 }});
 
       await runtime.start();
 
@@ -176,11 +176,37 @@ describe('MachineRuntime', () => {
     });
 
     test('it should call entry and exit hook if defined as any (*)', async () => {
-      const runtime = anyExitAnyEntryHook.run({ context: { entry: 0, exit: 0 }});
+      const runtime = anyExitAnyEntryHookMachine.run({ context: { entry: 0, exit: 0 }});
 
       await runtime.start();
 
       assert.deepEqual(runtime.getContext(), { entry: 1, exit: 1 });
+    });
+  });
+
+  describe('snapshots', () => {
+    test('it should make snapshot and restore it', async () => {
+      const runtimeBeforeSnapshot = snapshotMachine.run({ context: { value: 0 }});
+
+      await runtimeBeforeSnapshot.start();
+      await runtimeBeforeSnapshot.execute({ type: 'run' });
+
+      assert.deepEqual(runtimeBeforeSnapshot.getContext(), { value: 1 });
+      assert.deepEqual(runtimeBeforeSnapshot.getState(), 'intermediate');
+      assert.deepEqual(runtimeBeforeSnapshot.getStatus(), RuntimeStatus.Pending);
+
+      const snapshot = runtimeBeforeSnapshot.getSnapshot();
+      const runtimeAfterSnapshot = snapshotMachine.restoreRuntime({ snapshot });
+
+      assert.deepEqual(runtimeAfterSnapshot.getContext(), { value: 1 });
+      assert.deepEqual(runtimeAfterSnapshot.getState(), 'intermediate');
+      assert.deepEqual(runtimeAfterSnapshot.getStatus(), RuntimeStatus.Pending);
+
+      await runtimeAfterSnapshot.execute({ type: 'finish' });
+
+      assert.deepEqual(runtimeAfterSnapshot.getContext(), { value: 2 });
+      assert.deepEqual(runtimeAfterSnapshot.getState(), 'end');
+      assert.deepEqual(runtimeAfterSnapshot.getStatus(), RuntimeStatus.Done);
     });
   });
 });

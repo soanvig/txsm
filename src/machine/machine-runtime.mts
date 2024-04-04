@@ -1,10 +1,11 @@
 import { findMap } from '../helpers/array.mjs';
+import deepClone from '../helpers/deepClone.mjs';
 import { asyncFeedbackIterate } from '../helpers/iterator.mjs';
 import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
 import { Hook } from './hook.mjs';
-import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type MachineTypes, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TrsnWithEffect } from './types.mjs';
+import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TrsnWithEffect } from './types.mjs';
 
 export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
   protected stateMachine: StateMachine<Trsn, Types>;
@@ -15,19 +16,70 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected actors: Types['actors'];
   protected hooks: Hook<Types>[];
 
-  constructor (
+  protected constructor (
+    payload: {
+      stateMachine: StateMachine<Trsn, Types>;
+      context: Context<StateMachineContext<Types>>;
+      state: StateMachineState<Trsn>;
+      status: RuntimeStatus;
+      effects: Effect<Types>[];
+      actors: Types['actors'];
+      hooks: Hook<Types>[];
+    },
+  ) {
+    this.status = payload.status;
+    this.stateMachine = payload.stateMachine;
+    this.state = payload.state;
+    this.actors = payload.actors;
+    this.context = payload.context;
+    this.effects = payload.effects;
+    this.hooks = payload.hooks;
+  }
+
+  public static create<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> (
     stateMachine: StateMachine<Trsn, Types>,
     context: StateMachineContext<Types>,
     state: StateMachineState<Trsn>,
     actors: Types['actors'],
   ) {
-    this.status = RuntimeStatus.Stopped;
-    this.stateMachine = stateMachine;
-    this.state = state;
-    this.actors = actors;
-    this.context = Context.create(context);
-    this.effects = stateMachine.$effects.map(Effect.fromObject);
-    this.hooks = stateMachine.$hooks.map(Hook.fromObject);
+    return new MachineRuntime({
+      status: RuntimeStatus.Stopped,
+      stateMachine,
+      state,
+      actors,
+      context: Context.create(context),
+      effects: stateMachine.$effects.map(Effect.fromObject),
+      hooks: stateMachine.$hooks.map(Hook.fromObject),
+    });
+  }
+
+  public static restore<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> (
+    stateMachine: StateMachine<Trsn, Types>,
+    snapshot: Snapshot,
+    actors: Types['actors'],
+  ) {
+    /** Add state and status validation */
+    return new MachineRuntime({
+      status: snapshot.status,
+      stateMachine,
+      state: snapshot.state as any,
+      actors,
+      context: Context.create(snapshot.context),
+      effects: stateMachine.$effects.map(Effect.fromObject),
+      hooks: stateMachine.$hooks.map(Hook.fromObject),
+    });
+  }
+
+  public getSnapshot (): Snapshot {
+    if (this.status === RuntimeStatus.Running) {
+      throw new MachineError(ErrorCode.IsRunning, {});
+    }
+
+    return {
+      context: deepClone(this.context.value),
+      state: this.state,
+      status: this.status,
+    };
   }
 
   public getState (): StateMachineState<Trsn> {

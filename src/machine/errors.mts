@@ -3,6 +3,7 @@ export enum ErrorCode {
   NotStopped,
   NoTransition,
   TransitionIncorrectState,
+  IsRunning,
 }
 
 export class MachineError extends Error {

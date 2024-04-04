@@ -8,9 +8,10 @@
 - [x] handle effects (actions)
 - [x] handle hooks
 - [x] handle picking a transition that matches a guard
+- [x] add snapshot support
 - [ ] handle nested machines
-- [ ] add snapshot support
 - [ ] add history of states and operations
+- [ ] handle event in effects and hooks
 
 ## Tests
 
@@ -26,6 +27,7 @@
 - [ ] (optionally) detect loop of automated transitions
 - [ ] validate if final state doesn't have automated transition from it (execution stops there, but validation might help debugging) 
 - [ ] validate if there is only one effect per transition
+- [ ] validate if provided snapshot matches state machine (state mostly, because we can't check context)
 
 ## Chores
 

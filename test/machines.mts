@@ -172,7 +172,7 @@ export const mergeContextMachine = Machine.create({
       .then(assign({ value3: { subValue2: true }})),
 });
 
-export const exitEntryHook = Machine.create({
+export const exitEntryHookMachine = Machine.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],
@@ -187,7 +187,7 @@ export const exitEntryHook = Machine.create({
   action: ({ assign, context }) => assign({ exit: context.exit + 1 }),
 });
 
-export const anyExitAnyEntryHook = Machine.create({
+export const anyExitAnyEntryHookMachine = Machine.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],
@@ -200,4 +200,23 @@ export const anyExitAnyEntryHook = Machine.create({
   action: ({ assign, context }) => assign({ entry: context.entry + 1 }),
 }).addHook({ exit: '*' }, {
   action: ({ assign, context }) => assign({ exit: context.exit + 1 }),
+});
+
+export const snapshotMachine = Machine.create({
+  transitions: [
+    { from: 'pending', to: 'intermediate', with: 'run' },
+    { from: 'intermediate', to: 'end', with: 'finish' },
+  ],
+  config: { initial: 'pending', final: ['end'] },
+}).setTypes({
+  context: {} as { value: number },
+  actors: {} as {},
+  commands: {} as {
+    run: {},
+    finish: {},
+  },
+}).addEffect('pending', 'intermediate', {
+  action: ({ assign, context }) => assign({ value: context.value + 1 }),
+}).addEffect('intermediate', 'end', {
+  action: ({ assign, context }) => assign({ value: context.value + 1 }),
 });

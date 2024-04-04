@@ -114,6 +114,11 @@ export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes
     input: { context: Types['context'] }
       & { [K in keyof Types['actors'] as K extends never ? never : 'actors']: Types['actors'] }
   ) => MachineRuntime<Trsn, Types>
+
+  restoreRuntime: (
+    input: { snapshot: Snapshot }
+      & { [K in keyof Types['actors'] as K extends never ? never : 'actors']: Types['actors'] }
+  ) => MachineRuntime<Trsn, Types>
 };
 
 export type StateMachineContext<T extends AnyMachineTypes> = T['context'];
@@ -151,3 +156,9 @@ export type ActionStep = (input: any) => ActionResult;
 
 export type AnyMachineTypes = MachineTypes<AnyTrsn>;
 export type AnyStateMachine = StateMachine<AnyTrsn, MachineTypes<AnyTrsn>>;
+
+export interface Snapshot {
+  context: ContextValue;
+  state: string;
+  status: RuntimeStatus;
+}

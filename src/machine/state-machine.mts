@@ -10,8 +10,11 @@ const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineType
         $effects: stateMachine.$effects.concat({ from, to, effect }),
       });
     },
-    addHook: () => {
-      throw new Error('@todo');
+    addHook: (hookSettings, hook) => {
+      return makeStateMachineBuilder({
+        ...stateMachine,
+        $hooks: stateMachine.$hooks.concat({ ...hookSettings, hook }),
+      });
     },
     setTypes: types => {
       return makeStateMachineBuilder({
@@ -40,6 +43,7 @@ export const Machine = {
     return makeStateMachineBuilder({
       $config: params.config,
       $effects: [],
+      $hooks: [],
       $transitions: params.transitions.map(t => Transition.fromObject(t)),
       $types: {
         actors: {},

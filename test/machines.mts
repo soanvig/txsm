@@ -171,3 +171,33 @@ export const mergeContextMachine = Machine.create({
       .then(assign({ value2: [true] }))
       .then(assign({ value3: { subValue2: true }})),
 });
+
+export const exitEntryHook = Machine.create({
+  transitions: [
+    { from: 'pending', to: 'end' },
+  ],
+  config: { initial: 'pending', final: ['end'] },
+}).setTypes({
+  context: {} as { entry: number, exit: number },
+  actors: {} as {},
+  commands: {},
+}).addHook({ enter: 'end' }, {
+  action: ({ assign, context }) => assign({ entry: context.entry + 1 }),
+}).addHook({ exit: 'pending' }, {
+  action: ({ assign, context }) => assign({ exit: context.exit + 1 }),
+});
+
+export const anyExitAnyEntryHook = Machine.create({
+  transitions: [
+    { from: 'pending', to: 'end' },
+  ],
+  config: { initial: 'pending', final: ['end'] },
+}).setTypes({
+  context: {} as { entry: number, exit: number },
+  actors: {} as {},
+  commands: {},
+}).addHook({ enter: '*' }, {
+  action: ({ assign, context }) => assign({ entry: context.entry + 1 }),
+}).addHook({ exit: '*' }, {
+  action: ({ assign, context }) => assign({ exit: context.exit + 1 }),
+});

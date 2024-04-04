@@ -2,8 +2,6 @@ import { Action } from './action.mjs';
 import { type Context } from './context.mjs';
 import { ActionType, type ActionResult, type ActionStepPayload, type AnyMachineTypes, type AnyTrsn, type MachineEffect } from './types.mjs';
 
-type EffectExecuteInput<Types extends AnyMachineTypes> = { context: Context<Types['context']> };
-
 export class Effect<Types extends AnyMachineTypes> {
   protected constructor (
     protected from: string,

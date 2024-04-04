@@ -3,6 +3,7 @@ import { asyncFeedbackIterate } from '../helpers/iterator.mjs';
 import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
+import { Hook } from './hook.mjs';
 import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type MachineTypes, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TrsnWithEffect } from './types.mjs';
 
 export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
@@ -12,6 +13,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected status: RuntimeStatus;
   protected effects: Effect<Types>[];
   protected actors: Types['actors'];
+  protected hooks: Hook<Types>[];
 
   constructor (
     stateMachine: StateMachine<Trsn, Types>,
@@ -19,12 +21,13 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     state: StateMachineState<Trsn>,
     actors: Types['actors'],
   ) {
-    this.stateMachine = stateMachine;
-    this.context = Context.create(context);
-    this.state = state;
     this.status = RuntimeStatus.Stopped;
-    this.effects = stateMachine.$effects.map(Effect.fromObject);
+    this.stateMachine = stateMachine;
+    this.state = state;
     this.actors = actors;
+    this.context = Context.create(context);
+    this.effects = stateMachine.$effects.map(Effect.fromObject);
+    this.hooks = stateMachine.$hooks.map(Hook.fromObject);
   }
 
   public getState (): StateMachineState<Trsn> {
@@ -110,8 +113,21 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   }
 
   protected async changeState (state: StateMachineState<Trsn>): Promise<void> {
-    /** @todo Handle hooks */
+    const exitHooks = this.hooks.filter(h => h.exitMatches(this.state));
+    for (const hook of exitHooks) {
+      await asyncFeedbackIterate(hook.execute({ context: this.context, result: undefined }), async result => {
+        return await this.processActionResult(result);
+      });
+    }
+
     this.state = state;
+
+    const enterHooks = this.hooks.filter(h => h.enterMatches(state));
+    for (const hook of enterHooks) {
+      await asyncFeedbackIterate(hook.execute({ context: this.context, result: undefined }), async result => {
+        return await this.processActionResult(result);
+      });
+    }
   }
 
   protected determineStatus (): RuntimeStatus {

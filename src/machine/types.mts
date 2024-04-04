@@ -56,6 +56,17 @@ export type MachineEffect<T extends AnyMachineTypes> = {
     ) => Action<T, any, UnwrapPromise<ReturnType<T['actors'][K]>>>
   }) => Action<T, unknown, any>,
 }
+export type MachineHook<T extends AnyMachineTypes> = {
+  /** @note The same type as effect, at least for now */
+  action?: (payload: {
+    context: T['context'],
+    assign: (context: Partial<T['context']>) => Action<T, any, any>,
+    invoke: <K extends keyof T['actors'] & string>(
+      actorName: K,
+      ...params: Parameters<T['actors'][K]>
+    ) => Action<T, any, UnwrapPromise<ReturnType<T['actors'][K]>>>
+  }) => Action<T, unknown, any>,
+}
 
 export type MachineTypes<Trsns extends AnyTrsn> = {
   context: ContextValue;
@@ -78,6 +89,7 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
   $transitions: Trsn[],
   $types: Types,
   $effects: { from: string, to: string, effect: MachineEffect<Types> }[],
+  $hooks: { entry?: string, exit?: string, hook: MachineHook<Types> }[],
 }
 
 export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
@@ -92,8 +104,8 @@ export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes
   ) => StateMachineBuilder<Trsn, Types>;
 
   addHook: (
-    hookSettings: unknown,
-    hook: unknown
+    hookSettings: { enter: TrsnStates<Trsn> | typeof Transition.ANY_STATE } | { exit: TrsnStates<Trsn> | typeof Transition.ANY_STATE },
+    hook: MachineHook<Types>
   ) => StateMachineBuilder<Trsn, Types>;
 
   getStateMachine(): StateMachine<Trsn, Types>;

@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import test, { describe } from 'node:test';
 import { Machine } from '../src/machine/state-machine.mjs';
 import { RuntimeStatus } from '../src/machine/types.mjs';
-import { actorAssignMachine, autoEndContinueMachine, autoEndMachine, counterMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine } from './machines.mjs';
+import { actorAssignMachine, anyExitAnyEntryHook, autoEndContinueMachine, autoEndMachine, counterMachine, exitEntryHook, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -59,7 +59,7 @@ describe('MachineRuntime', () => {
     });
   });
 
-  describe('guard', () => {
+  describe('Effect guard', () => {
     test('it should select transitions based on guard (manual)', async t => {
       const runtimeTrue = guardedManualTransitionMachine.run({ context: { value: true } });
 
@@ -115,7 +115,7 @@ describe('MachineRuntime', () => {
     });
   });
 
-  describe('action', () => {
+  describe('Effect action', () => {
     test('it call all defined actions', async t => {
       let counter = 0;
       const runtime = makeEffectCallbackMachine(() => { counter += 1; }).run({ context: {} });
@@ -163,6 +163,24 @@ describe('MachineRuntime', () => {
 
       await runtime.start();
       assert.deepEqual(runtime.getContext().value, 7);
+    });
+  });
+
+  describe('Hook action', () => {
+    test('it should call entry and exit hook', async () => {
+      const runtime = exitEntryHook.run({ context: { entry: 0, exit: 0 }});
+
+      await runtime.start();
+
+      assert.deepEqual(runtime.getContext(), { entry: 1, exit: 1 });
+    });
+
+    test('it should call entry and exit hook if defined as any (*)', async () => {
+      const runtime = anyExitAnyEntryHook.run({ context: { entry: 0, exit: 0 }});
+
+      await runtime.start();
+
+      assert.deepEqual(runtime.getContext(), { entry: 1, exit: 1 });
     });
   });
 });

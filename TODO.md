@@ -3,20 +3,21 @@
 ## Functionality
 
 - [x] handle final state
-- [ ] add snapshot support
 - [x] handle effects (guards)
 - [x] handle update context action
 - [x] handle effects (actions)
-- [ ] handle hooks
-- [ ] handle nested machines
-- [ ] add history of states and operations
+- [x] handle hooks
 - [x] handle picking a transition that matches a guard
+- [ ] handle nested machines
+- [ ] add snapshot support
+- [ ] add history of states and operations
 
 ## Tests
 
+- [x] test proper context merging in assign actions
 - [ ] add more tests to effects (guards)
 - [ ] add more tests to actions
-- [x] test proper context merging in assign actions
+- [ ] add more tests to hooks
 - [ ] test guards, actions and actors throwing
 - [ ] add rollback - using snapshot OR create a copy of machine runtime under the hood, that will execute the code
 

@@ -1,6 +1,6 @@
-import { StateMachine } from './machine/state-machine.mjs';
+import { Machine } from './machine/state-machine.mjs';
 
-const stateMachine = StateMachine.create({
+const stateMachine = Machine.create({
   transitions: [
     { from: '*', to: '*', with: 'rootTransition' },
     { from: 'pending', to: 'onSigned', with: 'signed' },

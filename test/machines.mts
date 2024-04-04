@@ -1,8 +1,8 @@
 import { setTimeout } from 'timers/promises';
 import { Action } from '../src/machine/action.mjs';
-import { StateMachine } from '../src/machine/state-machine.mjs';
+import { Machine } from '../src/machine/state-machine.mjs';
 
-export const lightMachine = StateMachine.create({
+export const lightMachine = Machine.create({
   transitions: [
     { from: 'green', to: 'yellow', with: 'stop' },
     { from: 'yellow', to: 'red' }, //  auto transition
@@ -15,7 +15,7 @@ export const lightMachine = StateMachine.create({
   commands: {} as { stop: {}, walk: {} },
 });
 
-export const autoEndMachine = StateMachine.create({
+export const autoEndMachine = Machine.create({
   transitions: [
     { from: 'start', to: 'intermediate' },
     { from: 'intermediate', to: 'end' },
@@ -23,7 +23,7 @@ export const autoEndMachine = StateMachine.create({
   config: { initial: 'start', final: ['end'] },
 });
 
-export const autoEndContinueMachine = StateMachine.create({
+export const autoEndContinueMachine = Machine.create({
   transitions: [
     { from: 'start', to: 'intermediate' },
     { from: 'intermediate', to: 'end' },
@@ -32,7 +32,7 @@ export const autoEndContinueMachine = StateMachine.create({
   config: { initial: 'start', final: ['end'] },
 });
 
-export const guardedManualTransitionMachine = StateMachine.create({
+export const guardedManualTransitionMachine = Machine.create({
   transitions: [
     { from: 'start', to: 'valueTrue', with: 'next' },
     { from: 'start', to: 'valueFalse', with: 'next' },
@@ -50,7 +50,7 @@ export const guardedManualTransitionMachine = StateMachine.create({
   guard: ({ context }) => context.value === true,
 });
 
-export const guardedAutomatedTransitionMachine = StateMachine.create({
+export const guardedAutomatedTransitionMachine = Machine.create({
   transitions: [
     { from: 'start', to: 'valueTrue' },
     { from: 'start', to: 'valueFalse' },
@@ -66,7 +66,7 @@ export const guardedAutomatedTransitionMachine = StateMachine.create({
   guard: ({ context }) => context.value === true,
 });
 
-export const multipleGuardsAutomatedTransitionMachine = StateMachine.create({
+export const multipleGuardsAutomatedTransitionMachine = Machine.create({
   transitions: [
     { from: 'start', to: 'value1' },
     { from: 'start', to: 'value2' },
@@ -84,7 +84,7 @@ export const multipleGuardsAutomatedTransitionMachine = StateMachine.create({
   .addEffect('start', 'value2', { guard: ({ context }) => context.value === 2 })
   .addEffect('start', 'value3', { guard: ({ context }) => context.value === 3 });
 
-export const multipleGuardsManualTransitionMachine = StateMachine.create({
+export const multipleGuardsManualTransitionMachine = Machine.create({
   transitions: [
     { from: 'start', to: 'value1', with: 'run' },
     { from: 'start', to: 'value2', with: 'run' },
@@ -104,7 +104,7 @@ export const multipleGuardsManualTransitionMachine = StateMachine.create({
   .addEffect('start', 'value2', { guard: ({ context }) => context.value === 2 })
   .addEffect('start', 'value3', { guard: ({ context }) => context.value === 3 });
 
-export const makeEffectCallbackMachine = (cb: () => void) => StateMachine.create({
+export const makeEffectCallbackMachine = (cb: () => void) => Machine.create({
   transitions: [
     { from: 'start', to: 'end' },
   ],
@@ -117,7 +117,7 @@ export const makeEffectCallbackMachine = (cb: () => void) => StateMachine.create
         .then(cb),
   });
 
-export const counterMachine = StateMachine.create({
+export const counterMachine = Machine.create({
   transitions: [
     { from: 'pending', to: 'incremented', with: 'increment' },
     { from: 'pending', to: 'incrementedTwice', with: 'incrementTwice' },
@@ -139,7 +139,7 @@ export const counterMachine = StateMachine.create({
     .then(({ context }) => assign({ value: context.value + 1 })),
 });
 
-export const actorAssignMachine = StateMachine.create({
+export const actorAssignMachine = Machine.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],
@@ -156,7 +156,7 @@ export const actorAssignMachine = StateMachine.create({
       .then(({ result }) => assign({ value: result })),
 });
 
-export const mergeContextMachine = StateMachine.create({
+export const mergeContextMachine = Machine.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],

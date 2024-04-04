@@ -1,4 +1,4 @@
-import { type AnyTrsnObject, type NamedTrsnObject, type TrsnObject } from './configuration-types.mjs';
+import { type NamedTrsnObject, type TrsnObject, type TrsnObjectToTrsn } from './types.mjs';
 
 /**
  * Trsn seems to be abbreviation for Transition used in aircraft/technology
@@ -55,22 +55,3 @@ export class Transition<From extends string, To extends string, Name extends str
 
   static ANY_STATE = '*' as const;
 }
-
-export type AnyTrsn = Transition<string, string, string>;
-
-/**
- * Trsn<From1, To1> | Trsn<From2, To2> -> From1 | To1 | From2 | To2
- */
-export type TrsnStates<T extends AnyTrsn> = T extends Transition<infer F, infer T, any> ? F | T : never;
-
-/**
- * Trsn<*, *, A> | Trsn<*, *, B> -> A | B
- */
-export type TrsnCommands<T extends AnyTrsn> = T extends Transition<any, any, infer N> ? N : never;
-
-/**
- * NamedTrsnObject | TrsnObject -> Trsn
- */
-export type TrsnObjectToTrsn<T extends AnyTrsnObject> = T extends infer R extends AnyTrsnObject
-  ? Transition<R['from'], R['to'], [R] extends [NamedTrsnObject] ? R['with'] : never>
-  : never;

@@ -1,12 +1,12 @@
 import assert from 'node:assert';
 import test, { describe } from 'node:test';
-import { RuntimeStatus } from '../src/machine/machine-runtime.mjs';
-import { StateMachine } from '../src/machine/state-machine.mjs';
+import { Machine } from '../src/machine/state-machine.mjs';
+import { RuntimeStatus } from '../src/machine/types.mjs';
 import { actorAssignMachine, autoEndContinueMachine, autoEndMachine, counterMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
-    const runtime = StateMachine.create({
+    const runtime = Machine.create({
       transitions: [{ from: 's1', to: 's2', with: 'start' }],
       config: { initial: 's1', final: [] },
     }).run({ context: {} });

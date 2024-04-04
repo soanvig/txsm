@@ -1,20 +1,4 @@
-import { type AnyMachineTypes } from './state-machine.mjs';
-
-export enum ActionType {
-  Call,
-  Assign,
-  Invoke
-}
-
-export type CallActionResult<Types extends AnyMachineTypes> = { type: ActionType.Call, result: Action<Types, any, any> | any };
-export type AssignActionResult<Types extends AnyMachineTypes> = { type: ActionType.Assign, newContext: {} };
-export type InvokeActionResult<Types extends AnyMachineTypes> = { type: ActionType.Invoke, actorName: string, parameters: any[] };
-export type ActionResult<Types extends AnyMachineTypes = AnyMachineTypes> =
-  | CallActionResult<Types>
-  | AssignActionResult<Types>
-  | InvokeActionResult<Types>;
-export type ActionStepPayload<Types extends AnyMachineTypes, Output> = { result: Output, context: Types['context'] };
-type ActionStep = (input: any) => ActionResult;
+import { ActionType, type ActionResult, type ActionStep, type ActionStepPayload, type AnyMachineTypes, type AssignActionResult, type InvokeActionResult } from './types.mjs';
 
 /**
  * Action is special object, that allows to divide a process

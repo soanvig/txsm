@@ -1,27 +1,9 @@
 import { findMap } from '../helpers/array.mjs';
 import { asyncFeedbackIterate } from '../helpers/iterator.mjs';
-import { ActionType, type ActionResult, type ActionStepPayload } from './action.mjs';
 import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
-import { type AnyMachineTypes, type MachineTypes, type StateMachine } from './state-machine.mjs';
-import { type AnyTrsn, type Transition, type TrsnStates } from './transition.mjs';
-
-type StateMachineContext<T extends AnyMachineTypes> = T['context'];
-type StateMachineState<T extends AnyTrsn> = Exclude<TrsnStates<T>, typeof Transition.ANY_STATE>;
-type StateMachineCommands<T extends AnyMachineTypes> =
-  keyof T['commands'] extends infer Keys extends string
-    ? { [K in Keys]: { type: K } & T['commands'][K] }[Keys]
-    : never;
-
-type TrsnWithEffect<Types extends MachineTypes<AnyTrsn>> = { transition: AnyTrsn, effect: Effect<Types> };
-
-export enum RuntimeStatus {
-  Stopped = 'stopped',
-  Pending = 'pending',
-  Running = 'running',
-  Done = 'done',
-}
+import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type MachineTypes, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TrsnWithEffect } from './types.mjs';
 
 export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
   protected stateMachine: StateMachine<Trsn, Types>;

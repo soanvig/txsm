@@ -1,12 +1,12 @@
 import assert from 'node:assert';
 import test, { describe } from 'node:test';
-import { Machine } from '../src/machine/state-machine.mjs';
+import { Txsm } from '../src/machine/state-machine.mjs';
 import { RuntimeStatus } from '../src/machine/types.mjs';
 import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, snapshotMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
-    const runtime = Machine.create({
+    const runtime = Txsm.create({
       transitions: [{ from: 's1', to: 's2', with: 'start' }],
       config: { initial: 's1', final: [] },
     }).run({ context: {} });

@@ -36,7 +36,7 @@ const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineType
   return builder;
 };
 
-export const Machine = {
+export const Txsm = {
   create: <const T extends AnyTrsnObject> (
     params: {
       transitions: T[],

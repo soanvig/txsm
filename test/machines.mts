@@ -1,8 +1,8 @@
 import { setTimeout } from 'timers/promises';
 import { Action } from '../src/machine/action.mjs';
-import { Machine } from '../src/machine/state-machine.mjs';
+import { Txsm } from '../src/machine/state-machine.mjs';
 
-export const lightMachine = Machine.create({
+export const lightMachine = Txsm.create({
   transitions: [
     { from: 'green', to: 'yellow', with: 'stop' },
     { from: 'yellow', to: 'red' }, //  auto transition
@@ -15,7 +15,7 @@ export const lightMachine = Machine.create({
   commands: {} as { stop: {}, walk: {} },
 });
 
-export const autoEndMachine = Machine.create({
+export const autoEndMachine = Txsm.create({
   transitions: [
     { from: 'start', to: 'intermediate' },
     { from: 'intermediate', to: 'end' },
@@ -23,7 +23,7 @@ export const autoEndMachine = Machine.create({
   config: { initial: 'start', final: ['end'] },
 });
 
-export const autoEndContinueMachine = Machine.create({
+export const autoEndContinueMachine = Txsm.create({
   transitions: [
     { from: 'start', to: 'intermediate' },
     { from: 'intermediate', to: 'end' },
@@ -32,7 +32,7 @@ export const autoEndContinueMachine = Machine.create({
   config: { initial: 'start', final: ['end'] },
 });
 
-export const guardedManualTransitionMachine = Machine.create({
+export const guardedManualTransitionMachine = Txsm.create({
   transitions: [
     { from: 'start', to: 'valueTrue', with: 'next' },
     { from: 'start', to: 'valueFalse', with: 'next' },
@@ -50,7 +50,7 @@ export const guardedManualTransitionMachine = Machine.create({
   guard: ({ context }) => context.value === true,
 });
 
-export const guardedAutomatedTransitionMachine = Machine.create({
+export const guardedAutomatedTransitionMachine = Txsm.create({
   transitions: [
     { from: 'start', to: 'valueTrue' },
     { from: 'start', to: 'valueFalse' },
@@ -66,7 +66,7 @@ export const guardedAutomatedTransitionMachine = Machine.create({
   guard: ({ context }) => context.value === true,
 });
 
-export const multipleGuardsAutomatedTransitionMachine = Machine.create({
+export const multipleGuardsAutomatedTransitionMachine = Txsm.create({
   transitions: [
     { from: 'start', to: 'value1' },
     { from: 'start', to: 'value2' },
@@ -84,7 +84,7 @@ export const multipleGuardsAutomatedTransitionMachine = Machine.create({
   .addEffect('start', 'value2', { guard: ({ context }) => context.value === 2 })
   .addEffect('start', 'value3', { guard: ({ context }) => context.value === 3 });
 
-export const multipleGuardsManualTransitionMachine = Machine.create({
+export const multipleGuardsManualTransitionMachine = Txsm.create({
   transitions: [
     { from: 'start', to: 'value1', with: 'run' },
     { from: 'start', to: 'value2', with: 'run' },
@@ -104,7 +104,7 @@ export const multipleGuardsManualTransitionMachine = Machine.create({
   .addEffect('start', 'value2', { guard: ({ context }) => context.value === 2 })
   .addEffect('start', 'value3', { guard: ({ context }) => context.value === 3 });
 
-export const makeEffectCallbackMachine = (cb: () => void) => Machine.create({
+export const makeEffectCallbackMachine = (cb: () => void) => Txsm.create({
   transitions: [
     { from: 'start', to: 'end' },
   ],
@@ -117,7 +117,7 @@ export const makeEffectCallbackMachine = (cb: () => void) => Machine.create({
         .then(cb),
   });
 
-export const counterMachine = Machine.create({
+export const counterMachine = Txsm.create({
   transitions: [
     { from: 'pending', to: 'incremented', with: 'increment' },
     { from: 'pending', to: 'incrementedTwice', with: 'incrementTwice' },
@@ -139,7 +139,7 @@ export const counterMachine = Machine.create({
     .then(({ context }) => assign({ value: context.value + 1 })),
 });
 
-export const actorAssignMachine = Machine.create({
+export const actorAssignMachine = Txsm.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],
@@ -156,7 +156,7 @@ export const actorAssignMachine = Machine.create({
       .then(({ result }) => assign({ value: result })),
 });
 
-export const mergeContextMachine = Machine.create({
+export const mergeContextMachine = Txsm.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],
@@ -172,7 +172,7 @@ export const mergeContextMachine = Machine.create({
       .then(assign({ value3: { subValue2: true }})),
 });
 
-export const exitEntryHookMachine = Machine.create({
+export const exitEntryHookMachine = Txsm.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],
@@ -187,7 +187,7 @@ export const exitEntryHookMachine = Machine.create({
   action: ({ assign, context }) => assign({ exit: context.exit + 1 }),
 });
 
-export const anyExitAnyEntryHookMachine = Machine.create({
+export const anyExitAnyEntryHookMachine = Txsm.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],
@@ -202,7 +202,7 @@ export const anyExitAnyEntryHookMachine = Machine.create({
   action: ({ assign, context }) => assign({ exit: context.exit + 1 }),
 });
 
-export const snapshotMachine = Machine.create({
+export const snapshotMachine = Txsm.create({
   transitions: [
     { from: 'pending', to: 'intermediate', with: 'run' },
     { from: 'intermediate', to: 'end', with: 'finish' },

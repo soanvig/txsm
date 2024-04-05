@@ -1,6 +1,6 @@
 import assert from 'assert';
 import test, { describe } from 'node:test';
-import { Machine } from '../src/machine/state-machine.mjs';
+import { Txsm } from '../src/machine/state-machine.mjs';
 import { Transition } from '../src/machine/transition.mjs';
 
 describe('StateMachine', () => {
@@ -12,7 +12,7 @@ describe('StateMachine', () => {
       final: ['s2' as const],
     };
 
-    const sm = Machine.create({
+    const sm = Txsm.create({
       transitions,
       config,
     }).addEffect('s1', 's2', effects[0]).getStateMachine();

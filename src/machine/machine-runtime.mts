@@ -5,7 +5,7 @@ import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
 import { Hook } from './hook.mjs';
-import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TrsnWithEffect } from './types.mjs';
+import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type CommandPayload, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TrsnWithEffect } from './types.mjs';
 
 export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
   protected stateMachine: StateMachine<Trsn, Types>;
@@ -70,7 +70,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     });
   }
 
-  public getSnapshot (): Snapshot {
+  public getSnapshot (): Snapshot<Trsn, Types> {
     if (this.status === RuntimeStatus.Running) {
       throw new MachineError(ErrorCode.IsRunning, {});
     }
@@ -99,11 +99,13 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       throw new MachineError(ErrorCode.NotStopped, { currentStatus: this.status });
     }
 
-    this.status = RuntimeStatus.Running;
+    await this.withTransaction(async () => {
+      this.status = RuntimeStatus.Running;
 
-    await this.runAutomatedTransitions();
+      await this.runAutomatedTransitions();
 
-    this.status = this.determineStatus();
+      this.status = this.determineStatus();
+    });
   }
 
   public async execute (command: StateMachineCommands<Types>): Promise<void> {
@@ -122,12 +124,14 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       throw new MachineError(ErrorCode.TransitionIncorrectState, { currentState: this.state });
     }
 
-    this.status = RuntimeStatus.Running;
+    await this.withTransaction(async () => {
+      this.status = RuntimeStatus.Running;
 
-    await this.executeTransition(transitionWithEffect);
-    await this.runAutomatedTransitions();
+      await this.executeTransition(transitionWithEffect, command);
+      await this.runAutomatedTransitions();
 
-    this.status = this.determineStatus();
+      this.status = this.determineStatus();
+    });
   }
 
   protected async runAutomatedTransitions (): Promise<void> {
@@ -136,7 +140,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
         return;
       }
 
-      await this.executeTransition(transition);
+      await this.executeTransition(transition, {});
     }
   }
 
@@ -154,21 +158,22 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     }
   }
 
-  protected async executeTransition ({ effect, transition }: TrsnWithEffect<Types>): Promise<void> {
+  protected async executeTransition ({ effect, transition }: TrsnWithEffect<Types>, command: CommandPayload): Promise<void> {
     const target = transition.getTarget(this.state) as StateMachineState<Trsn>;
 
-    await asyncFeedbackIterate(effect.execute({ context: this.context, result: undefined }), async result => {
-      return await this.processActionResult(result);
+    await asyncFeedbackIterate(effect.execute({ context: this.context, result: undefined, command }), async result => {
+      return await this.processActionResult(result, command);
     });
 
     await this.changeState(target);
   }
 
   protected async changeState (state: StateMachineState<Trsn>): Promise<void> {
+    const command = {};
     const exitHooks = this.hooks.filter(h => h.exitMatches(this.state));
     for (const hook of exitHooks) {
-      await asyncFeedbackIterate(hook.execute({ context: this.context, result: undefined }), async result => {
-        return await this.processActionResult(result);
+      await asyncFeedbackIterate(hook.execute({ context: this.context, result: undefined, command }), async result => {
+        return await this.processActionResult(result, command);
       });
     }
 
@@ -176,8 +181,8 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
     const enterHooks = this.hooks.filter(h => h.enterMatches(state));
     for (const hook of enterHooks) {
-      await asyncFeedbackIterate(hook.execute({ context: this.context, result: undefined }), async result => {
-        return await this.processActionResult(result);
+      await asyncFeedbackIterate(hook.execute({ context: this.context, result: undefined, command }), async result => {
+        return await this.processActionResult(result, command);
       });
     }
   }
@@ -209,18 +214,20 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     return { transition, effect };
   }
 
-  protected async processActionResult (actionResult: ActionResult<Types>): Promise<ActionStepPayload<Types, any>> {
+  protected async processActionResult (actionResult: ActionResult<Types>, command: CommandPayload): Promise<ActionStepPayload<Types, any>> {
     switch (actionResult.type) {
       case ActionType.Call:
         return {
           result: await actionResult.result,
           context: this.context.value,
+          command,
         };
       case ActionType.Assign:
         this.context = this.context.merge(actionResult.newContext);
         return {
           result: undefined,
           context: this.context.value,
+          command,
         };
       case ActionType.Invoke:
         /** @TODO throw if actor doesn't exist (no typescript) */
@@ -229,10 +236,25 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
         return {
           result: await actor(...actionResult.parameters),
           context: this.context.value,
+          command,
         };
       default:
         const _: never = actionResult;
         throw new Error(`Unreachable (actionResult.type=${_})`);
+    }
+  }
+
+  protected async withTransaction<T> (cb: () => Promise<T>): Promise<T> {
+    const snapshot = this.getSnapshot();
+
+    try {
+      return await cb();
+    } catch (e) {
+      this.state = snapshot.state;
+      this.context = Context.create(snapshot.context),
+      this.status = snapshot.status;
+
+      throw e;
     }
   }
 }

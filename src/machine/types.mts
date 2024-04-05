@@ -45,9 +45,10 @@ export type MachineConfig<T extends AnyTrsn> = {
 export type CommandPayload = Record<string, any>;
 export type Actor = (...args: any[]) => any;
 export type Guard<T extends AnyMachineTypes> = (p: { context: T['context'] }) => boolean;
-export type MachineEffect<T extends AnyMachineTypes> = {
+export type MachineEffect<T extends AnyMachineTypes, C extends CommandPayload> = {
   guard?: Guard<T>,
   action?: (payload: {
+    command: C,
     context: T['context'],
     assign: (context: Partial<T['context']>) => Action<T, any, any>,
     invoke: <K extends keyof T['actors'] & string>(
@@ -88,7 +89,7 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
   $config: MachineConfig<Trsn>,
   $transitions: Trsn[],
   $types: Types,
-  $effects: { from: string, to: string, effect: MachineEffect<Types> }[],
+  $effects: { from: string, to: string, effect: MachineEffect<Types, CommandPayload> }[],
   $hooks: { entry?: string, exit?: string, hook: MachineHook<Types> }[],
 }
 
@@ -97,10 +98,10 @@ export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes
     types: T
   ) => StateMachineBuilder<Trsn, T>;
 
-  addEffect: <From extends AddEffectParamFrom<Trsn>> (
+  addEffect: <From extends AddEffectParamFrom<Trsn>, To extends AddEffectParamTo<Trsn, NoInfer<From>>> (
     from: From,
-    to: AddEffectParamTo<Trsn, NoInfer<From>>,
-    effect: MachineEffect<Types>
+    to: To,
+    effect: MachineEffect<Types, Trsn extends Transition<From, To, infer Name> ? Name extends never ? never : Types['commands'][Name] : never>
   ) => StateMachineBuilder<Trsn, Types>;
 
   addHook: (
@@ -151,14 +152,14 @@ export type ActionResult<Types extends AnyMachineTypes = AnyMachineTypes> =
   | AssignActionResult<Types>
   | InvokeActionResult<Types>;
 
-export type ActionStepPayload<Types extends AnyMachineTypes, Output> = { result: Output, context: Types['context'] };
+export type ActionStepPayload<Types extends AnyMachineTypes, Output> = { result: Output, context: Types['context'], command: CommandPayload };
 export type ActionStep = (input: any) => ActionResult;
 
 export type AnyMachineTypes = MachineTypes<AnyTrsn>;
 export type AnyStateMachine = StateMachine<AnyTrsn, MachineTypes<AnyTrsn>>;
 
-export interface Snapshot {
-  context: ContextValue;
-  state: string;
+export interface Snapshot<Trsn extends AnyTrsn = AnyTrsn, Types extends MachineTypes<Trsn> = AnyMachineTypes> {
+  context: Types['context'];
+  state: StateMachineState<Trsn>;
   status: RuntimeStatus;
 }

@@ -57,8 +57,8 @@ export class Action<Types extends AnyMachineTypes, Input, Output> {
 
   public static from<T extends AnyMachineTypes>(value: AssignActionResult<T>): Action<T, any, unknown>;
   public static from<T extends AnyMachineTypes>(value: InvokeActionResult<T>): Action<T, any, any>;
-  public static from<Input, Output>(value: (input: Input) => Promise<Output>): Action<AnyMachineTypes, Input, Output>;
-  public static from<Input, Output>(value: (input: Input) => Output): Action<AnyMachineTypes, Input, Output>;
+  public static from<Input, Output>(value: (input: Input) => Promise<Output>): Action<any, Input, Output>;
+  public static from<Input, Output>(value: (input: Input) => Output): Action<any, Input, Output>;
   public static from (value: ((arg: any) => any) | AssignActionResult<AnyMachineTypes> | InvokeActionResult<AnyMachineTypes>) {
     if (typeof value === 'function') {
       return new Action([

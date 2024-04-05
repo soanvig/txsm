@@ -9,9 +9,13 @@
 - [x] handle hooks
 - [x] handle picking a transition that matches a guard
 - [x] add snapshot support
+- [x] add rollback
+- [x] handle command in effects actions
+- [ ] handle command in effects guards
 - [ ] handle nested machines
 - [ ] add history of states and operations
-- [ ] handle event in effects and hooks
+- [ ] handle checking if an command can be executed (with or without guards)
+- [ ] list all commands that can be executed
 
 ## Tests
 
@@ -20,7 +24,7 @@
 - [ ] add more tests to actions
 - [ ] add more tests to hooks
 - [ ] test guards, actions and actors throwing
-- [ ] add rollback - using snapshot OR create a copy of machine runtime under the hood, that will execute the code
+- [ ] test rollback on different things than actions (however that might be not necessary, because everything necessary in start/execute is wrapped in transaction)
 
 ## Validation
 

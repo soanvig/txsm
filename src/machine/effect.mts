@@ -1,15 +1,15 @@
 import { Action } from './action.mjs';
 import { type Context } from './context.mjs';
-import { ActionType, type ActionResult, type ActionStepPayload, type AnyMachineTypes, type AnyTrsn, type MachineEffect } from './types.mjs';
+import { ActionType, type ActionResult, type ActionStepPayload, type AnyMachineTypes, type AnyTrsn, type CommandPayload, type MachineEffect } from './types.mjs';
 
 export class Effect<Types extends AnyMachineTypes> {
   protected constructor (
     protected from: string,
     protected to: string,
-    protected effect: MachineEffect<Types>,
+    protected effect: MachineEffect<Types, CommandPayload>,
   ) {}
 
-  public static fromObject <Types extends AnyMachineTypes> (obj: { from: string, to: string, effect: MachineEffect<Types> }) {
+  public static fromObject <Types extends AnyMachineTypes> (obj: { from: string, to: string, effect: MachineEffect<Types, CommandPayload> }) {
     return new Effect(
       obj.from,
       obj.to,
@@ -25,7 +25,7 @@ export class Effect<Types extends AnyMachineTypes> {
     return transition.matches({ from: this.from, to: this.to });
   }
 
-  public async* execute ({ context }: ActionStepPayload<Types, any>): AsyncGenerator<ActionResult<Types>, void, ActionStepPayload<Types, any>> {
+  public async* execute ({ context, command }: ActionStepPayload<Types, any>): AsyncGenerator<ActionResult<Types>, void, ActionStepPayload<Types, any>> {
     if (!this.effect.action) {
       return;
     }
@@ -34,6 +34,7 @@ export class Effect<Types extends AnyMachineTypes> {
       context: context.value,
       assign: newContext => Action.from({ type: ActionType.Assign, newContext }),
       invoke: (actorName, ...parameters) => Action.from({ type: ActionType.Invoke, actorName, parameters }),
+      command,
     });
 
     yield* collectedAction.iterate({ context });

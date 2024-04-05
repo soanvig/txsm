@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import test, { describe } from 'node:test';
 import { Txsm } from '../src/machine/state-machine.mjs';
 import { RuntimeStatus } from '../src/machine/types.mjs';
-import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, snapshotMachine } from './machines.mjs';
+import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, commandPayloadMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackCommandMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -207,6 +207,47 @@ describe('MachineRuntime', () => {
       assert.deepEqual(runtimeAfterSnapshot.getContext(), { value: 2 });
       assert.deepEqual(runtimeAfterSnapshot.getState(), 'end');
       assert.deepEqual(runtimeAfterSnapshot.getStatus(), RuntimeStatus.Done);
+    });
+  });
+
+  describe('rollback', () => {
+    test('rollback on start after unsucessful action', async t => {
+      const runtime = rollbackStartMachine.run({ context: { value: false }});
+
+      await assert.rejects(runtime.start());
+
+      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Stopped);
+      assert.deepEqual(runtime.getState(), 'start');
+      assert.deepEqual(runtime.getContext(), { value: false });
+    });
+
+    test('rollback on command after unsucessful action', async t => {
+      const runtime = rollbackCommandMachine.run({ context: { value: false }});
+
+      await runtime.start();
+
+      await assert.rejects(runtime.execute({ type: 'run' }));
+
+      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepEqual(runtime.getState(), 'start');
+      assert.deepEqual(runtime.getContext(), { value: false });
+    });
+  });
+
+  describe('Command payload', () => {
+    test('it should carry command over to effect action', async t => {
+      const runtime = commandPayloadMachine.run({ context: { value: 0 }});
+
+      await runtime.start();
+
+      await runtime.execute({ type: 'add', value: 2 });
+      assert.deepEqual(runtime.getContext(), { value: 2 });
+
+      await runtime.execute({ type: 'add', value: 3 });
+      assert.deepEqual(runtime.getContext(), { value: 5 });
+
+      await runtime.execute({ type: 'add', value: 10 });
+      assert.deepEqual(runtime.getContext(), { value: 15 });
     });
   });
 });

@@ -220,3 +220,56 @@ export const snapshotMachine = Txsm.create({
 }).addEffect('intermediate', 'end', {
   action: ({ assign, context }) => assign({ value: context.value + 1 }),
 });
+
+export const rollbackStartMachine = Txsm.create({
+  transitions: [
+    { from: 'start', to: 'intermediate' },
+    { from: 'intermediate', to: 'end' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+}).setTypes({
+  context: {} as { value: boolean },
+  actors: {} as {},
+  commands: {} as {},
+}).addEffect('intermediate', 'end', {
+  action: ({}) => Action.from(() => {
+    throw new Error('actionError');
+  }),
+}).addHook({ exit: 'start' }, {
+  action: ({ assign }) => assign({ value: true }),
+});
+
+export const rollbackCommandMachine = Txsm.create({
+  transitions: [
+    { from: 'start', to: 'intermediate', with: 'run' },
+    { from: 'intermediate', to: 'end' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+}).setTypes({
+  context: {} as { value: boolean },
+  actors: {} as {},
+  commands: {} as {
+    run: {},
+  },
+}).addEffect('intermediate', 'end', {
+  action: ({}) => Action.from(() => {
+    throw new Error('actionError');
+  }),
+}).addHook({ exit: 'start' }, {
+  action: ({ assign }) => assign({ value: true }),
+});
+
+export const commandPayloadMachine = Txsm.create({
+  transitions: [
+    { from: 'pending', to: 'pending', with: 'add' },
+  ],
+  config: { initial: 'pending', final: [] },
+}).setTypes({
+  context: {} as { value: number },
+  actors: {} as {},
+  commands: {} as {
+    add: { value: number },
+  },
+}).addEffect('pending', 'pending', {
+  action: ({ command, context, assign }) => assign({ value: context.value + command.value }),
+});

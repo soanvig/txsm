@@ -12,8 +12,8 @@
 - [x] add rollback
 - [x] handle command in effects actions
 - [x] handle command in effects guards
+- [x] add history of states and operations
 - [ ] handle nested machines
-- [ ] add history of states and operations
 - [ ] handle checking if an command can be executed (with or without guards)
 - [ ] list all commands that can be executed
 
@@ -25,6 +25,7 @@
 - [ ] add more tests to hooks
 - [ ] test guards, actions and actors throwing
 - [ ] test rollback on different things than actions (however that might be not necessary, because everything necessary in start/execute is wrapped in transaction)
+- [ ] test history
 
 ## Validation
 

@@ -4,6 +4,7 @@ import { asyncFeedbackIterate } from '../helpers/iterator.mjs';
 import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
+import { History } from './history.mjs';
 import { Hook } from './hook.mjs';
 import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type CommandPayload, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TrsnWithEffect } from './types.mjs';
 
@@ -15,6 +16,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected effects: Effect<Types>[];
   protected actors: Types['actors'];
   protected hooks: Hook<Types>[];
+  protected history: History;
 
   protected constructor (
     payload: {
@@ -25,6 +27,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       effects: Effect<Types>[];
       actors: Types['actors'];
       hooks: Hook<Types>[];
+      history: History;
     },
   ) {
     this.status = payload.status;
@@ -34,6 +37,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     this.context = payload.context;
     this.effects = payload.effects;
     this.hooks = payload.hooks;
+    this.history = payload.history;
   }
 
   public static create<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> (
@@ -50,6 +54,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       context: Context.create(context),
       effects: stateMachine.$effects.map(Effect.fromObject),
       hooks: stateMachine.$hooks.map(Hook.fromObject),
+      history: History.create().saveState(state),
     });
   }
 
@@ -67,6 +72,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       context: Context.create(snapshot.context),
       effects: stateMachine.$effects.map(Effect.fromObject),
       hooks: stateMachine.$hooks.map(Hook.fromObject),
+      history: History.restore(snapshot.history),
     });
   }
 
@@ -79,6 +85,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       context: deepClone(this.context.value),
       state: this.state,
       status: this.status,
+      history: this.history.getSnapshot(),
     };
   }
 
@@ -125,6 +132,8 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     }
 
     await this.withTransaction(async () => {
+      this.history.saveCommand(command);
+
       this.status = RuntimeStatus.Running;
 
       await this.executeTransition(transitionWithEffect, command);
@@ -178,6 +187,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     }
 
     this.state = state;
+    this.history.saveState(state);
 
     const enterHooks = this.hooks.filter(h => h.enterMatches(state));
     for (const hook of enterHooks) {
@@ -253,6 +263,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       this.state = snapshot.state;
       this.context = Context.create(snapshot.context),
       this.status = snapshot.status;
+      this.history = History.restore(snapshot.history);
 
       throw e;
     }

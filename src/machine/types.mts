@@ -43,6 +43,7 @@ export type MachineConfig<T extends AnyTrsn> = {
 }
 
 export type CommandPayload = Record<string, any>;
+export type Command = { type: string } & CommandPayload;
 export type Actor = (...args: any[]) => any;
 export type Guard<T extends AnyMachineTypes, C extends CommandPayload> = (p: { context: T['context'], command: C }) => boolean;
 export type MachineEffect<T extends AnyMachineTypes, C extends CommandPayload> = {
@@ -162,4 +163,10 @@ export interface Snapshot<Trsn extends AnyTrsn = AnyTrsn, Types extends MachineT
   context: Types['context'];
   state: StateMachineState<Trsn>;
   status: RuntimeStatus;
+  history: HistorySnapshot;
+}
+
+export type HistorySnapshot = {
+  states: string[];
+  commands: Command[];
 }

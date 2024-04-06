@@ -259,7 +259,7 @@ export const rollbackCommandMachine = Txsm.create({
   action: ({ assign }) => assign({ value: true }),
 });
 
-export const commandPayloadMachine = Txsm.create({
+export const commandPayloadActionMachine = Txsm.create({
   transitions: [
     { from: 'pending', to: 'pending', with: 'add' },
   ],
@@ -272,4 +272,20 @@ export const commandPayloadMachine = Txsm.create({
   },
 }).addEffect('pending', 'pending', {
   action: ({ command, context, assign }) => assign({ value: context.value + command.value }),
+});
+
+export const commandPayloadGuardMachine = Txsm.create({
+  transitions: [
+    { from: 'pending', to: 'true', with: 'run' },
+    { from: 'pending', to: 'false', with: 'run' },
+  ],
+  config: { initial: 'pending', final: ['true', 'false'] },
+}).setTypes({
+  context: {} as {},
+  actors: {} as {},
+  commands: {} as {
+    run: { value: boolean },
+  },
+}).addEffect('pending', 'true', {
+  guard: ({ command }) => command.value === true,
 });

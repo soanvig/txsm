@@ -11,7 +11,7 @@
 - [x] add snapshot support
 - [x] add rollback
 - [x] handle command in effects actions
-- [ ] handle command in effects guards
+- [x] handle command in effects guards
 - [ ] handle nested machines
 - [ ] add history of states and operations
 - [ ] handle checking if an command can be executed (with or without guards)

@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import test, { describe } from 'node:test';
 import { Txsm } from '../src/machine/state-machine.mjs';
 import { RuntimeStatus } from '../src/machine/types.mjs';
-import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, commandPayloadMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackCommandMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
+import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, commandPayloadActionMachine, commandPayloadGuardMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackCommandMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -236,7 +236,7 @@ describe('MachineRuntime', () => {
 
   describe('Command payload', () => {
     test('it should carry command over to effect action', async t => {
-      const runtime = commandPayloadMachine.run({ context: { value: 0 }});
+      const runtime = commandPayloadActionMachine.run({ context: { value: 0 }});
 
       await runtime.start();
 
@@ -248,6 +248,20 @@ describe('MachineRuntime', () => {
 
       await runtime.execute({ type: 'add', value: 10 });
       assert.deepEqual(runtime.getContext(), { value: 15 });
+    });
+
+    test('it should carry command over to effect guard', async t => {
+      const trueRuntime = commandPayloadGuardMachine.run({ context: {} });
+
+      await trueRuntime.start();
+      await trueRuntime.execute({ type: 'run', value: true });
+      assert.deepEqual(trueRuntime.getState(), 'true');
+
+      const falseRuntime = commandPayloadGuardMachine.run({ context: {} });
+
+      await falseRuntime.start();
+      await falseRuntime.execute({ type: 'run', value: false });
+      assert.deepEqual(falseRuntime.getState(), 'false');
     });
   });
 });

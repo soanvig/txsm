@@ -44,9 +44,9 @@ export type MachineConfig<T extends AnyTrsn> = {
 
 export type CommandPayload = Record<string, any>;
 export type Actor = (...args: any[]) => any;
-export type Guard<T extends AnyMachineTypes> = (p: { context: T['context'] }) => boolean;
+export type Guard<T extends AnyMachineTypes, C extends CommandPayload> = (p: { context: T['context'], command: C }) => boolean;
 export type MachineEffect<T extends AnyMachineTypes, C extends CommandPayload> = {
-  guard?: Guard<T>,
+  guard?: Guard<T, C>,
   action?: (payload: {
     command: C,
     context: T['context'],

@@ -40,8 +40,8 @@ export class Effect<Types extends AnyMachineTypes> {
     yield* collectedAction.iterate({ context });
   }
 
-  public testGuard (payload: { context: Context<Types['context']> }): boolean {
-    if (this.effect.guard && !this.effect.guard({ context: payload.context.value })) {
+  public testGuard (payload: { context: Context<Types['context']>, command: CommandPayload }): boolean {
+    if (this.effect.guard && !this.effect.guard({ context: payload.context.value, command: payload.command })) {
       return false;
     }
 

@@ -114,7 +114,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     }
 
     const transitions = this.stateMachine.$transitions.filter(t => t.is(command.type));
-    const transitionWithEffect = findMap(transitions, t => this.matchTransitionWithEffect(t));
+    const transitionWithEffect = findMap(transitions, t => this.matchTransitionWithEffect(t, command));
 
     if (!transitionWithEffect) {
       throw new MachineError(ErrorCode.NoTransition, {});
@@ -147,7 +147,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected* getAutomatedTransition (): Generator<TrsnWithEffect<Types>> {
     while (true) {
       const transition = findMap(this.stateMachine.$transitions, t =>
-        t.canTransitionFrom(this.state) && !t.isManual() && this.matchTransitionWithEffect(t),
+        t.canTransitionFrom(this.state) && !t.isManual() && this.matchTransitionWithEffect(t, {}),
       );
 
       if (transition) {
@@ -200,14 +200,14 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
    * If there is no effect available, an empty effect is created.
    * If there is effect with a guard, the guard is tested, and if it fails, then the function fails as well.
    */
-  protected matchTransitionWithEffect (transition: AnyTrsn): TrsnWithEffect<Types> | null {
+  protected matchTransitionWithEffect (transition: AnyTrsn, command: CommandPayload): TrsnWithEffect<Types> | null {
     const effect = this.effects.find(e => e.matches(transition));
 
     if (!effect) {
       return { transition, effect: Effect.emptyFor(transition) };
     }
 
-    if (!effect.testGuard({ context: this.context })) {
+    if (!effect.testGuard({ context: this.context, command })) {
       return null;
     }
 

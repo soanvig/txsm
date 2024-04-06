@@ -4,6 +4,8 @@ export enum ErrorCode {
   NoTransition,
   TransitionIncorrectState,
   IsRunning,
+  SnapshotStateInvalid,
+  SnapshotStatusInvalid,
 }
 
 export class MachineError extends Error {

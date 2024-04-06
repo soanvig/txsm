@@ -64,6 +64,14 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     actors: Types['actors'],
   ) {
     /** Add state and status validation */
+    if (!stateMachine.$transitions.some(t => t.getTransition().from === snapshot.state || t.getTransition().to === snapshot.state)) {
+      throw new MachineError(ErrorCode.SnapshotStateInvalid, { state: snapshot.state });
+    }
+
+    if (!Object.values(RuntimeStatus).includes(snapshot.status)) {
+      throw new MachineError(ErrorCode.SnapshotStatusInvalid, { status: snapshot.status });
+    }
+
     return new MachineRuntime({
       status: snapshot.status,
       stateMachine,

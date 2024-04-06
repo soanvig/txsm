@@ -13,8 +13,8 @@
 - [x] handle command in effects actions
 - [x] handle command in effects guards
 - [x] add history of states and operations
+- [x] handle checking if an command can be executed (with or without guards)
 - [ ] handle nested machines
-- [ ] handle checking if an command can be executed (with or without guards)
 - [ ] list all commands that can be executed
 
 ## Tests
@@ -26,6 +26,8 @@
 - [ ] test guards, actions and actors throwing
 - [ ] test rollback on different things than actions (however that might be not necessary, because everything necessary in start/execute is wrapped in transaction)
 - [ ] test history
+- [ ] test `canAcceptCommand`
+- [ ] test `canExecuteCommand` 
 
 ## Validation
 
@@ -38,3 +40,4 @@
 
 - [x] add descriptive errors
 - [ ] (optionally) freeze context before passing it down to the guards, actions, etc
+- [ ] unify `canAcceptCommand`, `canExecuteCommand` and `execute` checks

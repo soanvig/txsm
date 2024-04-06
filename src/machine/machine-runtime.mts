@@ -115,6 +115,27 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     });
   }
 
+  public canAcceptCommand (command: { type: keyof Types['commands'] }): boolean {
+    if (this.status !== RuntimeStatus.Pending) {
+      return false;
+    }
+
+    const transitions = this.stateMachine.$transitions.filter(t => t.is(command.type as string));
+
+    return transitions.some(t => t.canTransitionFrom(this.state));
+  }
+
+  public canExecuteCommand (command: StateMachineCommands<Types>): boolean {
+    if (this.status !== RuntimeStatus.Pending) {
+      return false;
+    }
+
+    const transitions = this.stateMachine.$transitions.filter(t => t.is(command.type));
+    const transitionWithEffect = findMap(transitions, t => this.matchTransitionWithEffect(t, command));
+
+    return Boolean(transitionWithEffect && transitionWithEffect.transition.canTransitionFrom(this.state));
+  }
+
   public async execute (command: StateMachineCommands<Types>): Promise<void> {
     if (this.status !== RuntimeStatus.Pending) {
       throw new MachineError(ErrorCode.NotPending, { currentStatus: this.status });

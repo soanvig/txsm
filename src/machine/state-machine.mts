@@ -1,13 +1,13 @@
 import { MachineRuntime } from './machine-runtime.mjs';
 import { Transition } from './transition.mjs';
-import { type AnyTrsn, type AnyTrsnObject, type MachineConfig, type MachineTypes, type StateMachine, type StateMachineBuilder, type TrsnObjectToTrsn } from './types.mjs';
+import { type AnyTrsn, type AnyTrsnObject, type CommandPayload, type MachineConfig, type MachineEffect, type MachineTypes, type StateMachine, type StateMachineBuilder, type TrsnObjectToTrsn } from './types.mjs';
 
 const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>>(stateMachine: StateMachine<Trsn, Types>): StateMachineBuilder<Trsn, Types> => {
   const builder: StateMachineBuilder<Trsn, Types> = {
     addEffect: (from, to, effect) => {
       return makeStateMachineBuilder({
         ...stateMachine,
-        $effects: stateMachine.$effects.concat({ from, to, effect }),
+        $effects: stateMachine.$effects.concat({ from, to, effect: effect as MachineEffect<Types, CommandPayload> }),
       });
     },
     addHook: (hookSettings, hook) => {

@@ -102,7 +102,11 @@ export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes
   addEffect: <From extends AddEffectParamFrom<Trsn>, To extends AddEffectParamTo<Trsn, NoInfer<From>>> (
     from: From,
     to: To,
-    effect: MachineEffect<Types, Trsn extends Transition<From, To, infer Name> ? Name extends never ? never : Types['commands'][Name] : never>
+    effect: MachineEffect<Types, Trsn extends Transition<From, To, infer Name>
+      ? Name extends never
+        ? never
+        : Types['commands'][Name]
+      : never>
   ) => StateMachineBuilder<Trsn, Types>;
 
   addHook: (

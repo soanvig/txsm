@@ -41,3 +41,4 @@
 - [x] add descriptive errors
 - [ ] (optionally) freeze context before passing it down to the guards, actions, etc
 - [ ] unify `canAcceptCommand`, `canExecuteCommand` and `execute` checks
+- [ ] define types partially

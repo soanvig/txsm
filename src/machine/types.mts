@@ -86,12 +86,20 @@ type AddEffectParamTo<Trsn extends AnyTrsn, From extends string> = Trsn extends 
     : never
   : never;
 
+type RunInput<Types extends AnyMachineTypes> = { context: Types['context'] }
+  & { [K in keyof Types['actors'] as K extends never ? never : 'actors']: Types['actors'] };
+
 export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
   $config: MachineConfig<Trsn>,
   $transitions: Trsn[],
   $types: Types,
   $effects: { from: string, to: string, effect: MachineEffect<Types, CommandPayload> }[],
   $hooks: { entry?: string, exit?: string, hook: MachineHook<Types> }[],
+  $children: {
+    onState: string,
+    inputFactory: (payload: { context: Types['context'] }) => RunInput<AnyStateMachine['$types']>,
+    machine: AnyStateMachine,
+  }[];
 }
 
 export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
@@ -114,11 +122,16 @@ export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes
     hook: MachineHook<Types>
   ) => StateMachineBuilder<Trsn, Types>;
 
+  addChild: <SM extends AnyStateMachine>(
+    onState: StateMachineState<Trsn>,
+    machine: SM,
+    inputFactory: (payload: { context: Types['context'] }) => RunInput<SM['$types']>,
+  ) => StateMachineBuilder<Trsn, Types>;
+
   getStateMachine(): StateMachine<Trsn, Types>;
 
   run: (
-    input: { context: Types['context'] }
-      & { [K in keyof Types['actors'] as K extends never ? never : 'actors']: Types['actors'] }
+    input: RunInput<Types>,
   ) => MachineRuntime<Trsn, Types>
 
   restoreRuntime: (
@@ -161,7 +174,7 @@ export type ActionStepPayload<Types extends AnyMachineTypes, Output> = { result:
 export type ActionStep = (input: any) => ActionResult;
 
 export type AnyMachineTypes = MachineTypes<AnyTrsn>;
-export type AnyStateMachine = StateMachine<AnyTrsn, MachineTypes<AnyTrsn>>;
+export type AnyStateMachine = StateMachine<any, any>;
 
 export interface Snapshot<Trsn extends AnyTrsn = AnyTrsn, Types extends MachineTypes<Trsn> = AnyMachineTypes> {
   context: Types['context'];

@@ -16,6 +16,12 @@ const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineType
         $hooks: stateMachine.$hooks.concat({ ...hookSettings, hook }),
       });
     },
+    addChild: (onState, machine, inputFactory) => {
+      return makeStateMachineBuilder({
+        ...stateMachine,
+        $children: stateMachine.$children.concat({ onState, inputFactory, machine }),
+      });
+    },
     setTypes: types => {
       return makeStateMachineBuilder({
         ...stateMachine,
@@ -48,6 +54,7 @@ export const Txsm = {
       $effects: [],
       $hooks: [],
       $transitions: params.transitions.map(t => Transition.fromObject(t)),
+      $children: [],
       $types: {
         actors: {},
         commands: {},

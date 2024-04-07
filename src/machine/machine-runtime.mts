@@ -1,12 +1,12 @@
 import { findMap } from '../helpers/array.mjs';
 import deepClone from '../helpers/deepClone.mjs';
-import { asyncFeedbackIterate } from '../helpers/iterator.mjs';
+import { asyncFeedbackIterate, first } from '../helpers/iterator.mjs';
 import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
 import { History } from './history.mjs';
 import { Hook } from './hook.mjs';
-import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type CommandPayload, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TrsnWithEffect } from './types.mjs';
+import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TransitionPlan } from './types.mjs';
 
 export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
   protected stateMachine: StateMachine<Trsn, Types>;
@@ -117,9 +117,12 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     await this.withTransaction(async () => {
       this.status = RuntimeStatus.Running;
 
-      await this.runAutomatedTransitions();
+      for await (const transition of this.transitionPlanner({ command: null })) {
+        await this.executeTransition(transition);
+        this.status = this.isFinal() ? RuntimeStatus.Done : RuntimeStatus.Running;
+      }
 
-      this.status = this.determineStatus();
+      this.status = this.isFinal() ? RuntimeStatus.Done : RuntimeStatus.Pending;
     });
   }
 
@@ -133,15 +136,14 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     return transitions.some(t => t.canTransitionFrom(this.state));
   }
 
-  public canExecuteCommand (command: StateMachineCommands<Types>): boolean {
+  public async canExecuteCommand (command: StateMachineCommands<Types>): Promise<boolean> {
     if (this.status !== RuntimeStatus.Pending) {
       return false;
     }
 
-    const transitions = this.stateMachine.$transitions.filter(t => t.is(command.type));
-    const transitionWithEffect = findMap(transitions, t => this.matchTransitionWithEffect(t, command));
+    const transition = await first(this.transitionPlanner({ command }));
 
-    return Boolean(transitionWithEffect && transitionWithEffect.transition.canTransitionFrom(this.state));
+    return Boolean(transition);
   }
 
   public async execute (command: StateMachineCommands<Types>): Promise<void> {
@@ -149,54 +151,20 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       throw new MachineError(ErrorCode.NotPending, { currentStatus: this.status });
     }
 
-    const transitions = this.stateMachine.$transitions.filter(t => t.is(command.type));
-    const transitionWithEffect = findMap(transitions, t => this.matchTransitionWithEffect(t, command));
-
-    if (!transitionWithEffect) {
-      throw new MachineError(ErrorCode.NoTransition, {});
-    }
-
-    if (!transitionWithEffect.transition.canTransitionFrom(this.state)) {
-      throw new MachineError(ErrorCode.TransitionIncorrectState, { currentState: this.state });
-    }
-
     await this.withTransaction(async () => {
+      this.status = RuntimeStatus.Running;
       this.history.saveCommand(command);
 
-      this.status = RuntimeStatus.Running;
+      for await (const transition of this.transitionPlanner({ command, atLeastOne: true })) {
+        await this.executeTransition(transition);
+        this.status = this.isFinal() ? RuntimeStatus.Done : RuntimeStatus.Running;
+      }
 
-      await this.executeTransition(transitionWithEffect, command);
-      await this.runAutomatedTransitions();
-
-      this.status = this.determineStatus();
+      this.status = this.isFinal() ? RuntimeStatus.Done : RuntimeStatus.Pending;
     });
   }
 
-  protected async runAutomatedTransitions (): Promise<void> {
-    for (const transition of this.getAutomatedTransition()) {
-      if (this.determineStatus() !== RuntimeStatus.Pending) {
-        return;
-      }
-
-      await this.executeTransition(transition, {});
-    }
-  }
-
-  protected* getAutomatedTransition (): Generator<TrsnWithEffect<Types>> {
-    while (true) {
-      const transition = findMap(this.stateMachine.$transitions, t =>
-        t.canTransitionFrom(this.state) && !t.isManual() && this.matchTransitionWithEffect(t, {}),
-      );
-
-      if (transition) {
-        yield transition;
-      } else {
-        return;
-      }
-    }
-  }
-
-  protected async executeTransition ({ effect, transition }: TrsnWithEffect<Types>, command: CommandPayload): Promise<void> {
+  protected async executeTransition ({ effect, transition, command }: TransitionPlan<Types>): Promise<void> {
     const target = transition.getTarget(this.state) as StateMachineState<Trsn>;
 
     await asyncFeedbackIterate(effect.execute({ context: this.context, result: undefined, command }), async result => {
@@ -207,7 +175,8 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   }
 
   protected async changeState (state: StateMachineState<Trsn>): Promise<void> {
-    const command = {};
+    const command = null;
+
     const exitHooks = this.hooks.filter(h => h.exitMatches(this.state));
     for (const hook of exitHooks) {
       await asyncFeedbackIterate(hook.execute({ context: this.context, result: undefined, command }), async result => {
@@ -226,34 +195,60 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     }
   }
 
-  protected determineStatus (): RuntimeStatus {
-    if (this.stateMachine.$config.final.includes(this.state)) {
-      return RuntimeStatus.Done;
-    }
-
-    return RuntimeStatus.Pending;
+  protected isFinal (): boolean {
+    return this.stateMachine.$config.final.includes(this.state);
   }
 
-  /**
-   * Find matching effect for a transition.
-   * If there is no effect available, an empty effect is created.
-   * If there is effect with a guard, the guard is tested, and if it fails, then the function fails as well.
-   */
-  protected matchTransitionWithEffect (transition: AnyTrsn, command: CommandPayload): TrsnWithEffect<Types> | null {
-    const effect = this.effects.find(e => e.matches(transition));
+  protected async* transitionPlanner (
+    payload: { command: StateMachineCommands<Types> | null, atLeastOne?: boolean },
+  ): AsyncGenerator<TransitionPlan<Types>, void, void> {
+    let command = payload.command;
+    let atLeastOne = payload.atLeastOne ?? false;
 
-    if (!effect) {
-      return { transition, effect: Effect.emptyFor(transition) };
+    while (true) {
+      if (this.status === RuntimeStatus.Done) {
+        return;
+      }
+
+      const applicableTransitions = this.stateMachine.$transitions
+        .filter(t => {
+          const matches = command ? t.is(command.type) : !t.isManual();
+          const canTransition = t.canTransitionFrom(this.state);
+
+          return matches && canTransition;
+        });
+
+      const transition = findMap(applicableTransitions, (t): TransitionPlan<Types> | null => {
+        const effect = this.effects.find(e => e.matches(t));
+
+        if (!effect) {
+          return { transition: t, effect: Effect.emptyFor(t), command };
+        }
+
+        if (!effect.testGuard({ context: this.context, command: command ?? {} })) {
+          return null;
+        }
+
+        return { transition: t, effect, command };
+      });
+
+      if (!transition) {
+        if (atLeastOne) {
+          throw new MachineError(ErrorCode.NoTransition, {});
+        } else {
+          return;
+        }
+      }
+
+      yield transition;
+
+      // Command is resetted after first pass
+      command = null;
+      atLeastOne = false;
     }
-
-    if (!effect.testGuard({ context: this.context, command })) {
-      return null;
-    }
-
-    return { transition, effect };
   }
 
-  protected async processActionResult (actionResult: ActionResult<Types>, command: CommandPayload): Promise<ActionStepPayload<Types, any>> {
+  protected async processActionResult (actionResult: ActionResult<Types>, command: StateMachineCommands<Types> | null): Promise<ActionStepPayload<Types, any>> {
     switch (actionResult.type) {
       case ActionType.Call:
         return {

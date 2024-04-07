@@ -2,7 +2,7 @@ export enum ErrorCode {
   NotPending,
   NotStopped,
   NoTransition,
-  TransitionIncorrectState,
+  TransitionIncorrectState, // Not used currently
   IsRunning,
   SnapshotStateInvalid,
   SnapshotStatusInvalid,

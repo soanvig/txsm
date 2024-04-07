@@ -6,10 +6,10 @@ export class Effect<Types extends AnyMachineTypes> {
   protected constructor (
     protected from: string,
     protected to: string,
-    protected effect: MachineEffect<Types, CommandPayload>,
+    protected effect: MachineEffect<Types, CommandPayload | null>,
   ) {}
 
-  public static fromObject <Types extends AnyMachineTypes> (obj: { from: string, to: string, effect: MachineEffect<Types, CommandPayload> }) {
+  public static fromObject <Types extends AnyMachineTypes> (obj: { from: string, to: string, effect: MachineEffect<Types, CommandPayload | null> }) {
     return new Effect(
       obj.from,
       obj.to,

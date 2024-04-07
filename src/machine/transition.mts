@@ -1,13 +1,10 @@
 import { type NamedTrsnObject, type TrsnObject, type TrsnObjectToTrsn } from './types.mjs';
 
-/**
- * Trsn seems to be abbreviation for Transition used in aircraft/technology
- */
-export class Transition<From extends string, To extends string, Name extends string> {
+export class Transition<From extends string, To extends string, Name extends string | null> {
   private constructor (
     protected from: From,
     protected to: To,
-    protected name: Name | null,
+    protected name: Name,
   ) {}
 
   public getTarget (currentState: string): string | null {

@@ -18,7 +18,7 @@ export type NamedTrsnObject = {
 
 export type AnyTrsnObject = TrsnObject | NamedTrsnObject;
 
-export type AnyTrsn = Transition<string, string, string>;
+export type AnyTrsn = Transition<string, string, string | null>;
 
 /**
  * Trsn<From1, To1> | Trsn<From2, To2> -> From1 | To1 | From2 | To2
@@ -28,13 +28,13 @@ export type TrsnStates<T extends AnyTrsn> = T extends Transition<infer F, infer 
 /**
  * Trsn<*, *, A> | Trsn<*, *, B> -> A | B
  */
-export type TrsnCommands<T extends AnyTrsn> = T extends Transition<any, any, infer N> ? N : never;
+export type TrsnCommands<T extends AnyTrsn> = T extends Transition<any, any, infer N> ? N extends string ? N : never : never;
 
 /**
  * NamedTrsnObject | TrsnObject -> Trsn
  */
 export type TrsnObjectToTrsn<T extends AnyTrsnObject> = T extends infer R extends AnyTrsnObject
-  ? Transition<R['from'], R['to'], [R] extends [NamedTrsnObject] ? R['with'] : never>
+  ? Transition<R['from'], R['to'], [R] extends [NamedTrsnObject] ? R['with'] : null>
   : never;
 
 export type MachineConfig<T extends AnyTrsn> = {
@@ -45,8 +45,8 @@ export type MachineConfig<T extends AnyTrsn> = {
 export type CommandPayload = Record<string, any>;
 export type Command = { type: string } & CommandPayload;
 export type Actor = (...args: any[]) => any;
-export type Guard<T extends AnyMachineTypes, C extends CommandPayload> = (p: { context: T['context'], command: C }) => boolean;
-export type MachineEffect<T extends AnyMachineTypes, C extends CommandPayload> = {
+export type Guard<T extends AnyMachineTypes, C extends CommandPayload | null> = (p: { context: T['context'], command: C }) => boolean;
+export type MachineEffect<T extends AnyMachineTypes, C extends CommandPayload | null> = {
   guard?: Guard<T, C>,
   action?: (payload: {
     command: C,
@@ -93,7 +93,7 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
   $config: MachineConfig<Trsn>,
   $transitions: Trsn[],
   $types: Types,
-  $effects: { from: string, to: string, effect: MachineEffect<Types, CommandPayload> }[],
+  $effects: { from: string, to: string, effect: MachineEffect<Types, CommandPayload | null> }[],
   $hooks: { entry?: string, exit?: string, hook: MachineHook<Types> }[],
   $children: {
     onState: string,
@@ -110,11 +110,7 @@ export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes
   addEffect: <From extends AddEffectParamFrom<Trsn>, To extends AddEffectParamTo<Trsn, NoInfer<From>>> (
     from: From,
     to: To,
-    effect: MachineEffect<Types, Trsn extends Transition<From, To, infer Name>
-      ? Name extends never
-        ? never
-        : Types['commands'][Name]
-      : never>
+    effect: MachineEffect<Types, Trsn extends Transition<From, To, infer Name> ? Name extends string ? Types['commands'][Name] : null : never>
   ) => StateMachineBuilder<Trsn, Types>;
 
   addHook: (
@@ -147,8 +143,6 @@ export type StateMachineCommands<T extends AnyMachineTypes> =
     ? { [K in Keys]: { type: K } & T['commands'][K] }[Keys]
     : never;
 
-export type TrsnWithEffect<Types extends MachineTypes<AnyTrsn>> = { transition: AnyTrsn, effect: Effect<Types> };
-
 export enum RuntimeStatus {
   Stopped = 'stopped',
   Pending = 'pending',
@@ -170,7 +164,7 @@ export type ActionResult<Types extends AnyMachineTypes = AnyMachineTypes> =
   | AssignActionResult<Types>
   | InvokeActionResult<Types>;
 
-export type ActionStepPayload<Types extends AnyMachineTypes, Output> = { result: Output, context: Types['context'], command: CommandPayload };
+export type ActionStepPayload<Types extends AnyMachineTypes, Output> = { result: Output, context: Types['context'], command: CommandPayload | null };
 export type ActionStep = (input: any) => ActionResult;
 
 export type AnyMachineTypes = MachineTypes<AnyTrsn>;
@@ -186,4 +180,10 @@ export interface Snapshot<Trsn extends AnyTrsn = AnyTrsn, Types extends MachineT
 export type HistorySnapshot = {
   states: string[];
   commands: Command[];
+}
+
+export type TransitionPlan<Types extends AnyMachineTypes> = {
+  command: StateMachineCommands<Types> | null;
+  transition: AnyTrsn;
+  effect: Effect<Types>;
 }

@@ -7,7 +7,7 @@ const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineType
     addEffect: (from, to, effect) => {
       return makeStateMachineBuilder({
         ...stateMachine,
-        $effects: stateMachine.$effects.concat({ from, to, effect: effect as MachineEffect<Types, CommandPayload> }),
+        $effects: stateMachine.$effects.concat({ from, to, effect: effect as MachineEffect<Types, CommandPayload | null> }),
       });
     },
     addHook: (hookSettings, hook) => {

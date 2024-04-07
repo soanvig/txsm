@@ -19,3 +19,21 @@ export const feedbackIterate = <T, N>(iterator: Iterator<T, void, N>, cb: (v: T)
     result = iterator.next(cb(result.value));
   }
 };
+
+/**
+ * This modifies iterator, because it calls next function on it.
+ * Also it finishes iterator
+ */
+export const first = async <T, >(iterator: AsyncIterator<T, any, any>): Promise<T | null> => {
+  const result = await iterator.next();
+
+  if (iterator.return) {
+    iterator.return();
+  }
+
+  if (result.done === false && result.value !== undefined) {
+    return result.value;
+  } else {
+    return null;
+  }
+};

@@ -42,3 +42,4 @@
 - [ ] (optionally) freeze context before passing it down to the guards, actions, etc
 - [ ] unify `canAcceptCommand`, `canExecuteCommand` and `execute` checks
 - [ ] define types partially
+- [ ] change architecture: create transition planner (generator) which results will be passed to executor which uses action as generator etc (everything will happen step by step)

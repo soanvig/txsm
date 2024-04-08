@@ -10,8 +10,6 @@ export const lightMachine = Txsm.create({
   ],
   config: { initial: 'red', final: [] },
 }).setTypes({
-  context: {} as {},
-  actors: {} as {},
   commands: {} as { stop: {}, walk: {} },
 });
 
@@ -39,7 +37,6 @@ export const guardedManualTransitionMachine = Txsm.create({
   ],
   config: { initial: 'start', final: ['valueFalse', 'valueTrue'] },
 }).setTypes({
-  actors: {},
   commands: {
     next: {},
   },
@@ -57,8 +54,6 @@ export const guardedAutomatedTransitionMachine = Txsm.create({
   ],
   config: { initial: 'start', final: ['valueFalse', 'valueTrue'] },
 }).setTypes({
-  actors: {},
-  commands: {},
   context: {} as {
     value: boolean;
   },
@@ -74,8 +69,6 @@ export const multipleGuardsAutomatedTransitionMachine = Txsm.create({
   ],
   config: { initial: 'start', final: ['value1', 'value2', 'value3'] },
 }).setTypes({
-  actors: {},
-  commands: {},
   context: {} as {
     value: number;
   },
@@ -92,7 +85,6 @@ export const multipleGuardsManualTransitionMachine = Txsm.create({
   ],
   config: { initial: 'start', final: ['value1', 'value2', 'value3'] },
 }).setTypes({
-  actors: {},
   commands: {} as {
     run: {}
   },
@@ -127,7 +119,6 @@ export const counterMachine = Txsm.create({
   config: { initial: 'pending', final: [] },
 }).setTypes({
   context: {} as { value: number },
-  actors: {},
   commands: {
     increment: {},
     incrementTwice: {},
@@ -163,8 +154,6 @@ export const mergeContextMachine = Txsm.create({
   config: { initial: 'pending', final: ['end'] },
 }).setTypes({
   context: {} as { value0: boolean, value1: boolean, value2: boolean[], value3: { subValue1?: boolean, subValue2?: boolean } },
-  actors: {} as {},
-  commands: {},
 }).addEffect('pending', 'end', {
   action: ({ assign }) =>
     assign({ value1: true })
@@ -179,8 +168,6 @@ export const exitEntryHookMachine = Txsm.create({
   config: { initial: 'pending', final: ['end'] },
 }).setTypes({
   context: {} as { entry: number, exit: number },
-  actors: {} as {},
-  commands: {},
 }).addHook({ enter: 'end' }, {
   action: ({ assign, context }) => assign({ entry: context.entry + 1 }),
 }).addHook({ exit: 'pending' }, {
@@ -194,8 +181,6 @@ export const anyExitAnyEntryHookMachine = Txsm.create({
   config: { initial: 'pending', final: ['end'] },
 }).setTypes({
   context: {} as { entry: number, exit: number },
-  actors: {} as {},
-  commands: {},
 }).addHook({ enter: '*' }, {
   action: ({ assign, context }) => assign({ entry: context.entry + 1 }),
 }).addHook({ exit: '*' }, {
@@ -210,7 +195,6 @@ export const snapshotMachine = Txsm.create({
   config: { initial: 'pending', final: ['end'] },
 }).setTypes({
   context: {} as { value: number },
-  actors: {} as {},
   commands: {} as {
     run: {},
     finish: {},
@@ -229,8 +213,7 @@ export const rollbackStartMachine = Txsm.create({
   config: { initial: 'start', final: ['end'] },
 }).setTypes({
   context: {} as { value: boolean },
-  actors: {} as {},
-  commands: {} as {},
+  actors: {},
 }).addEffect('intermediate', 'end', {
   action: ({}) => Action.from(() => {
     throw new Error('actionError');
@@ -247,7 +230,6 @@ export const rollbackCommandMachine = Txsm.create({
   config: { initial: 'start', final: ['end'] },
 }).setTypes({
   context: {} as { value: boolean },
-  actors: {} as {},
   commands: {} as {
     run: {},
   },
@@ -266,7 +248,6 @@ export const commandPayloadActionMachine = Txsm.create({
   config: { initial: 'pending', final: [] },
 }).setTypes({
   context: {} as { value: number },
-  actors: {} as {},
   commands: {} as {
     add: { value: number },
   },
@@ -281,8 +262,6 @@ export const commandPayloadGuardMachine = Txsm.create({
   ],
   config: { initial: 'pending', final: ['true', 'false'] },
 }).setTypes({
-  context: {} as {},
-  actors: {} as {},
   commands: {} as {
     run: { value: boolean },
   },

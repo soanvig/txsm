@@ -76,6 +76,11 @@ export type MachineTypes<Trsns extends AnyTrsn> = {
   actors: Record<string, Actor>;
 }
 
+export type SetMachineTypes<Trsns extends AnyTrsn> = {
+  context?: ContextValue;
+  actors?: Record<string, Actor>;
+} & (TrsnCommands<Trsns> extends never ? {} : { commands: Record<TrsnCommands<Trsns>, CommandPayload> });
+
 type AddEffectParamFrom<Trsn extends AnyTrsn> = Trsn extends Transition<infer From, any, any>
   ? From
   : never;
@@ -98,9 +103,9 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
 }
 
 export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
-  setTypes: <T extends MachineTypes<Trsn>> (
+  setTypes: <T extends SetMachineTypes<Trsn>> (
     types: T
-  ) => StateMachineBuilder<Trsn, T>;
+  ) => StateMachineBuilder<Trsn, Types & T>;
 
   addEffect: <From extends AddEffectParamFrom<Trsn>, To extends AddEffectParamTo<Trsn, NoInfer<From>>> (
     from: From,

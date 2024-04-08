@@ -289,28 +289,3 @@ export const commandPayloadGuardMachine = Txsm.create({
 }).addEffect('pending', 'true', {
   guard: ({ command }) => command.value === true,
 });
-
-const childMachine = Txsm.create({
-  transitions: [
-    { from: 'start', to: 'end' },
-  ],
-  config: { initial: 'start', final: ['end'] },
-}).setTypes({
-  context: {} as {
-    value: boolean,
-  },
-  actors: {},
-  commands: {},
-});
-
-export const parentMachine = Txsm.create({
-  transitions: [
-    { from: 'pending', to: 'child' },
-    { from: 'child', to: 'end' },
-  ],
-  config: { initial: 'pending', final: ['end'] },
-}).addChild('child', childMachine.getStateMachine(), () => ({
-  context: {
-    value: true,
-  },
-}));

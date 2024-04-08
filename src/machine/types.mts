@@ -95,11 +95,6 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
   $types: Types,
   $effects: { from: string, to: string, effect: MachineEffect<Types, CommandPayload | null> }[],
   $hooks: { entry?: string, exit?: string, hook: MachineHook<Types> }[],
-  $children: {
-    onState: string,
-    inputFactory: (payload: { context: Types['context'] }) => RunInput<AnyStateMachine['$types']>,
-    machine: AnyStateMachine,
-  }[];
 }
 
 export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
@@ -116,12 +111,6 @@ export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes
   addHook: (
     hookSettings: { enter: TrsnStates<Trsn> | typeof Transition.ANY_STATE } | { exit: TrsnStates<Trsn> | typeof Transition.ANY_STATE },
     hook: MachineHook<Types>
-  ) => StateMachineBuilder<Trsn, Types>;
-
-  addChild: <SM extends AnyStateMachine>(
-    onState: StateMachineState<Trsn>,
-    machine: SM,
-    inputFactory: (payload: { context: Types['context'] }) => RunInput<SM['$types']>,
   ) => StateMachineBuilder<Trsn, Types>;
 
   getStateMachine(): StateMachine<Trsn, Types>;

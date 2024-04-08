@@ -14,8 +14,8 @@
 - [x] handle command in effects guards
 - [x] add history of states and operations
 - [x] handle checking if an command can be executed (with or without guards)
-- [ ] handle nested machines
 - [ ] list all commands that can be executed
+- [ ] handle nested machines - probably it will be better to have "machine system" that will interwine two machines together
 
 ## Tests
 

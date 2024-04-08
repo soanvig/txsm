@@ -6,6 +6,7 @@ export enum ErrorCode {
   IsRunning,
   SnapshotStateInvalid,
   SnapshotStatusInvalid,
+  DuplicatedEffect,
 }
 
 export class MachineError extends Error {

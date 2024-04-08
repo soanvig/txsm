@@ -1,3 +1,4 @@
+import { ErrorCode, MachineError } from './errors.mjs';
 import { MachineRuntime } from './machine-runtime.mjs';
 import { Transition } from './transition.mjs';
 import { type AnyTrsn, type AnyTrsnObject, type CommandPayload, type MachineConfig, type MachineEffect, type MachineTypes, type StateMachine, type StateMachineBuilder, type TrsnObjectToTrsn } from './types.mjs';
@@ -5,6 +6,12 @@ import { type AnyTrsn, type AnyTrsnObject, type CommandPayload, type MachineConf
 const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>>(stateMachine: StateMachine<Trsn, Types>): StateMachineBuilder<Trsn, Types> => {
   const builder: StateMachineBuilder<Trsn, Types> = {
     addEffect: (from, to, effect) => {
+      const existingEffect = stateMachine.$effects.some(e => e.from === from && e.to === to);
+
+      if (existingEffect) {
+        throw new MachineError(ErrorCode.DuplicatedEffect, { from, to });
+      }
+
       return makeStateMachineBuilder({
         ...stateMachine,
         $effects: stateMachine.$effects.concat({ from, to, effect: effect as MachineEffect<Types, CommandPayload | null> }),

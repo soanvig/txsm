@@ -32,9 +32,9 @@
 ## Validation
 
 - [x] validate if provided snapshot matches state machine (state mostly, because we can't check context)
+- [x] validate if there is only one effect per transition
 - [ ] (optionally) detect loop of automated transitions
 - [ ] validate if final state doesn't have automated transition from it (execution stops there, but validation might help debugging) 
-- [ ] validate if there is only one effect per transition
 
 ## Chores
 

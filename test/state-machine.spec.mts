@@ -23,4 +23,13 @@ describe('StateMachine', () => {
       { from: 's1', to: 's2', effect: effects[0] },
     ]);
   });
+
+  test('.addEffect duplicate', t => {
+    const sm = Txsm.create({
+      transitions: [{ from: 's1', to: 's2' }],
+      config: { initial: 's1', final: [] },
+    }).addEffect('s1', 's2', {});
+
+    assert.throws(() => sm.addEffect('s1', 's2', {}));
+  });
 });

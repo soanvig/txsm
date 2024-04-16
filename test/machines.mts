@@ -103,8 +103,8 @@ export const makeEffectCallbackMachine = (cb: () => void) => Txsm.create({
   config: { initial: 'start', final: ['end'] },
 })
   .addEffect('start', 'end', {
-    action: () =>
-      Action.from(cb)
+    action: ({ from }) =>
+      from(cb)
         .then(() => setTimeout(5).then(cb))
         .then(cb),
   });
@@ -216,13 +216,13 @@ export const rollbackStartMachine = Txsm.create({
   actors: {},
 }).addEffect('intermediate', 'end', {
   action: ({}) => Action.from(() => {
-    throw new Error('actionError');
+    throw new Error('effect action error');
   }),
 }).addHook({ exit: 'start' }, {
   action: ({ assign }) => assign({ value: true }),
 });
 
-export const rollbackCommandMachine = Txsm.create({
+export const rollbackFromActionMachine = Txsm.create({
   transitions: [
     { from: 'start', to: 'intermediate', with: 'run' },
     { from: 'intermediate', to: 'end' },
@@ -267,4 +267,56 @@ export const commandPayloadGuardMachine = Txsm.create({
   },
 }).addEffect('pending', 'true', {
   guard: ({ command }) => command.value === true,
+});
+
+export const rollbackFromGuardMachine = Txsm.create({
+  transitions: [
+    { from: 'start', to: 'intermediate', with: 'run' },
+    { from: 'intermediate', to: 'end' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+}).setTypes({
+  context: {} as {},
+  commands: {} as {
+    run: {},
+  },
+}).addEffect('intermediate', 'end', {
+  guard: ({}) => {
+    throw new Error('Thrown from guard');
+  },
+});
+
+export const rollbackFromHookMachine = Txsm.create({
+  transitions: [
+    { from: 'start', to: 'intermediate', with: 'run' },
+    { from: 'intermediate', to: 'end' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+}).setTypes({
+  context: {} as {},
+  commands: {} as {
+    run: {},
+  },
+}).addHook({ exit: 'intermediate' }, {
+  action: ({ from }) => from(() => {
+    throw new Error('Thrown from hook');
+  }),
+});
+
+export const rollbackFromHookActorMachine = Txsm.create({
+  transitions: [
+    { from: 'start', to: 'intermediate', with: 'run' },
+    { from: 'intermediate', to: 'end' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+}).setTypes({
+  context: {} as {},
+  commands: {} as {
+    run: {},
+  },
+  actors: {} as {
+    throwingActor: () => void,
+  },
+}).addHook({ exit: 'intermediate' }, {
+  action: ({ invoke }) => invoke('throwingActor'),
 });

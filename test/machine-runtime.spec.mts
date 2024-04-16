@@ -2,14 +2,14 @@ import assert from 'node:assert';
 import test, { describe } from 'node:test';
 import { Txsm } from '../src/machine/state-machine.mjs';
 import { RuntimeStatus } from '../src/machine/types.mjs';
-import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, commandPayloadActionMachine, commandPayloadGuardMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackCommandMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
+import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, commandPayloadActionMachine, commandPayloadGuardMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackFromActionMachine, rollbackFromGuardMachine, rollbackFromHookActorMachine, rollbackFromHookMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
     const runtime = Txsm.create({
       transitions: [{ from: 's1', to: 's2', with: 'start' }],
       config: { initial: 's1', final: [] },
-    }).run({ context: {} });
+    }).run({});
 
     assert.deepEqual(runtime.getState(), 's1');
     assert.deepEqual(runtime.getStatus(), RuntimeStatus.Stopped);
@@ -21,7 +21,7 @@ describe('MachineRuntime', () => {
 
   describe('transition', () => {
     test('allow to traverse transitions in a loop', async t => {
-      const runtime = lightMachine.run({ context: {} });
+      const runtime = lightMachine.run({});
 
       await runtime.start();
       assert.deepEqual(runtime.getState(), 'red');
@@ -37,7 +37,7 @@ describe('MachineRuntime', () => {
     });
 
     test('run automated transitions on start', async t => {
-      const runtime = autoEndMachine.run({ context: {} });
+      const runtime = autoEndMachine.run({});
 
       assert.deepEqual(runtime.getState(), 'start');
       assert.deepEqual(runtime.getStatus(), RuntimeStatus.Stopped);
@@ -48,7 +48,7 @@ describe('MachineRuntime', () => {
     });
 
     test('stop automated transitions upon reaching final state', async t => {
-      const runtime = autoEndContinueMachine.run({ context: {} });
+      const runtime = autoEndContinueMachine.run({});
 
       assert.deepEqual(runtime.getState(), 'start');
       assert.deepEqual(runtime.getStatus(), RuntimeStatus.Stopped);
@@ -118,7 +118,7 @@ describe('MachineRuntime', () => {
   describe('Effect action', () => {
     test('it call all defined actions', async t => {
       let counter = 0;
-      const runtime = makeEffectCallbackMachine(() => { counter += 1; }).run({ context: {} });
+      const runtime = makeEffectCallbackMachine(() => { counter += 1; }).run({});
 
       await runtime.start();
       assert.deepEqual(counter, 3);
@@ -222,7 +222,7 @@ describe('MachineRuntime', () => {
     });
 
     test('rollback on command after unsucessful action', async t => {
-      const runtime = rollbackCommandMachine.run({ context: { value: false }});
+      const runtime = rollbackFromActionMachine.run({ context: { value: false }});
 
       await runtime.start();
 
@@ -231,6 +231,45 @@ describe('MachineRuntime', () => {
       assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
       assert.deepEqual(runtime.getState(), 'start');
       assert.deepEqual(runtime.getContext(), { value: false });
+    });
+
+    test('rollback on guard throw', async t => {
+      const runtime = rollbackFromGuardMachine.run({});
+
+      await runtime.start();
+      await assert.rejects(runtime.execute({ type: 'run' }));
+
+      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepEqual(runtime.getState(), 'start');
+      assert.deepEqual(runtime.getContext(), {});
+    });
+
+    test('rollback on hook throw', async t => {
+      const runtime = rollbackFromHookMachine.run({});
+
+      await runtime.start();
+      await assert.rejects(runtime.execute({ type: 'run' }));
+
+      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepEqual(runtime.getState(), 'start');
+      assert.deepEqual(runtime.getContext(), {});
+    });
+
+    test('rollback on hook actor throw', async t => {
+      const runtime = rollbackFromHookActorMachine.run({
+        actors: {
+          throwingActor: () => {
+            throw new Error('Thrown from hook actor');
+          },
+        },
+      });
+
+      await runtime.start();
+      await assert.rejects(runtime.execute({ type: 'run' }));
+
+      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepEqual(runtime.getState(), 'start');
+      assert.deepEqual(runtime.getContext(), {});
     });
   });
 
@@ -251,13 +290,13 @@ describe('MachineRuntime', () => {
     });
 
     test('it should carry command over to effect guard', async t => {
-      const trueRuntime = commandPayloadGuardMachine.run({ context: {} });
+      const trueRuntime = commandPayloadGuardMachine.run({});
 
       await trueRuntime.start();
       await trueRuntime.execute({ type: 'run', value: true });
       assert.deepEqual(trueRuntime.getState(), 'true');
 
-      const falseRuntime = commandPayloadGuardMachine.run({ context: {} });
+      const falseRuntime = commandPayloadGuardMachine.run({});
 
       await falseRuntime.start();
       await falseRuntime.execute({ type: 'run', value: false });

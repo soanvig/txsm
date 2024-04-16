@@ -53,6 +53,7 @@ export type MachineEffect<T extends AnyMachineTypes, C extends CommandPayload | 
     command: C,
     context: T['context'],
     assign: (context: Partial<T['context']>) => Action<T, any, any>,
+    from: typeof Action['from'],
     invoke: <K extends keyof T['actors'] & string>(
       actorName: K,
       ...params: Parameters<T['actors'][K]>
@@ -64,6 +65,7 @@ export type MachineHook<T extends AnyMachineTypes> = {
   action?: (payload: {
     context: T['context'],
     assign: (context: Partial<T['context']>) => Action<T, any, any>,
+    from: typeof Action['from'],
     invoke: <K extends keyof T['actors'] & string>(
       actorName: K,
       ...params: Parameters<T['actors'][K]>
@@ -92,7 +94,8 @@ type AddEffectParamTo<Trsn extends AnyTrsn, From extends string> = Trsn extends 
     : never
   : never;
 
-type RunInput<Types extends AnyMachineTypes> = { context: Types['context'] }
+type RunInput<Types extends AnyMachineTypes> = {}
+  & { [K in keyof Types['context'] as K extends never ? never : 'context']: Types['context'] }
   & { [K in keyof Types['actors'] as K extends never ? never : 'actors']: Types['actors'] };
 
 export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {

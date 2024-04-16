@@ -34,6 +34,7 @@ export class Hook<Types extends AnyMachineTypes> {
       context: context.value,
       assign: newContext => Action.from({ type: ActionType.Assign, newContext }),
       invoke: (actorName, ...parameters) => Action.from({ type: ActionType.Invoke, actorName, parameters }),
+      from: Action.from,
     });
 
     yield* collectedAction.iterate({ context });

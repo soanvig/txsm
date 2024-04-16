@@ -33,7 +33,7 @@ const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineType
       return stateMachine;
     },
     run: input => {
-      return MachineRuntime.create(stateMachine, input.context, stateMachine.$config.initial, 'actors' in input ? input.actors : {});
+      return MachineRuntime.create(stateMachine, input.context ?? {}, stateMachine.$config.initial, input.actors ?? {});
     },
     restoreRuntime: input => {
       return MachineRuntime.restore(stateMachine, input.snapshot, 'actors' in input ? input.actors : {});

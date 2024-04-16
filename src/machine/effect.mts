@@ -35,6 +35,7 @@ export class Effect<Types extends AnyMachineTypes> {
       assign: newContext => Action.from({ type: ActionType.Assign, newContext }),
       invoke: (actorName, ...parameters) => Action.from({ type: ActionType.Invoke, actorName, parameters }),
       command,
+      from: Action.from,
     });
 
     yield* collectedAction.iterate({ context });

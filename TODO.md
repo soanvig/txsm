@@ -22,18 +22,25 @@
 ## Documentation
 
 - [ ] document state machine and runtime API using comments
+- [ ] README
+  - [ ] how to install
+  - [ ] quick start
+  - [ ] effects/actions
+  - [ ] effects/guards
+  - [ ] hooks/actions
+  - [ ] actors
 
 ## Tests
 
 - [x] test proper context merging in assign actions
-- [?] add more tests to effects (guards)
-- [?] add more tests to actions
-- [?] add more tests to hooks
 - [x] test guards, actions and actors throwing
-- [ ] test rollback on different things than actions (however that might be not necessary, because everything necessary in start/execute is wrapped in transaction)
 - [x] test history
 - [x] test `canAcceptCommand`
-- [x] test `canExecuteCommand` 
+- [x] test `canExecuteCommand`
+- [?] add more tests to effects (guards)
+- [?] add more tests to actions
+- [?] add more tests to hooks 
+- [ ] test rollback on different things than actions (however that might be not necessary, because everything necessary in start/execute is wrapped in transaction)
 
 ## Typing
 
@@ -52,4 +59,7 @@
 - [x] unify `canAcceptCommand`, `canExecuteCommand` and `execute` checks
 - [x] partial .setTypes
 - [x] change architecture: create transition planner (generator) which results will be passed to executor which uses action as generator etc (everything will happen step by step)
+- [ ] CI
+  - [ ] test pipeline
+  - [ ] release and versioning pipeline
 - [ ] (optionally) freeze context before passing it down to the guards, actions, etc

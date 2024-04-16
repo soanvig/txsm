@@ -332,3 +332,33 @@ export const historyMachine = Txsm.create({
     run: {},
   },
 });
+
+export const canAcceptCommandMachine = Txsm.create({
+  transitions: [
+    { from: 'start', to: 'intermediate', with: 'next' },
+    { from: 'intermediate', to: 'end', with: 'finish' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+}).setTypes({
+  commands: {} as {
+    next: {},
+    finish: {},
+  },
+});
+
+export const canExecuteCommandMachine = Txsm.create({
+  transitions: [
+    { from: 'start', to: 'intermediate', with: 'next' },
+    { from: 'intermediate', to: 'end', with: 'finish' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+}).setTypes({
+  commands: {} as {
+    next: { value: boolean },
+    finish: { value: boolean },
+  },
+}).addEffect('start', 'intermediate', {
+  guard: ({ command }) => command.value === true,
+}).addEffect('intermediate', 'end', {
+  guard: ({ command }) => command.value === true,
+});

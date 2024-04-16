@@ -19,6 +19,10 @@
 - [ ] (next) store more information on history (like context changes and actors invocation)
 - [ ] (next) add system for emitting internal events a user can subscribe to
 
+## Documentation
+
+- [ ] document state machine and runtime API using comments
+
 ## Tests
 
 - [x] test proper context merging in assign actions
@@ -28,8 +32,8 @@
 - [x] test guards, actions and actors throwing
 - [ ] test rollback on different things than actions (however that might be not necessary, because everything necessary in start/execute is wrapped in transaction)
 - [x] test history
-- [ ] test `canAcceptCommand`
-- [ ] test `canExecuteCommand` 
+- [x] test `canAcceptCommand`
+- [x] test `canExecuteCommand` 
 
 ## Typing
 

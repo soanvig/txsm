@@ -3,7 +3,7 @@ import test, { describe } from 'node:test';
 import { omit } from '../src/helpers/object.mjs';
 import { Txsm } from '../src/machine/state-machine.mjs';
 import { RuntimeStatus } from '../src/machine/types.mjs';
-import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, commandPayloadActionMachine, commandPayloadGuardMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, historyMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackFromActionMachine, rollbackFromGuardMachine, rollbackFromHookActorMachine, rollbackFromHookMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
+import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, canAcceptCommandMachine, canExecuteCommandMachine, commandPayloadActionMachine, commandPayloadGuardMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, historyMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackFromActionMachine, rollbackFromGuardMachine, rollbackFromHookActorMachine, rollbackFromHookMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -320,6 +320,72 @@ describe('MachineRuntime', () => {
         { type: 'state', state: 'intermediate' },
         { type: 'state', state: 'end' },
       ]);
+    });
+  });
+
+  describe('Available commands checks', () => {
+    test('canAcceptCommand', async t => {
+      const runtime = canAcceptCommandMachine.run({});
+
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'next' }), false);
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'finish' }), false);
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'foobar' as any }), false);
+
+      await runtime.start();
+
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'next' }), true);
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'finish' }), false);
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'foobar' as any }), false);
+
+      await runtime.execute({ type: 'next' });
+
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'next' }), false);
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'finish' }), true);
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'foobar' as any }), false);
+
+      await runtime.execute({ type: 'finish' });
+
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'next' }), false);
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'finish' }), false);
+      assert.deepStrictEqual(runtime.canAcceptCommand({ type: 'foobar' as any }), false);
+    });
+
+    test('canExecuteCommand', async t => {
+      const runtime = canExecuteCommandMachine.run({});
+
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'next', value: false }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'finish', value: false }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'foobar', value: false } as any), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'next', value: true }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'finish', value: true }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'foobar', value: true } as any), false);
+
+      await runtime.start();
+
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'next', value: false }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'finish', value: false }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'foobar', value: false } as any), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'next', value: true }), true);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'finish', value: true }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'foobar', value: true } as any), false);
+
+      await runtime.execute({ type: 'next', value: true });
+
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'next', value: false }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'finish', value: false }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'foobar', value: false } as any), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'next', value: true }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'finish', value: true }), true);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'foobar', value: true } as any), false);
+
+      await runtime.execute({ type: 'finish', value: true });
+
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'next', value: false }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'finish', value: false }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'foobar', value: false } as any), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'next', value: true }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'finish', value: true }), false);
+      assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'foobar', value: true } as any), false);
     });
   });
 });

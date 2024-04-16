@@ -2,6 +2,7 @@ import { type UnwrapPromise } from '../helpers/types.mjs';
 import { type Action } from './action.mjs';
 import { type ContextValue } from './context.mjs';
 import { type Effect } from './effect.mjs';
+import { type HistoryEntry } from './history.mjs';
 import { type MachineRuntime } from './machine-runtime.mjs';
 import { type Transition } from './transition.mjs';
 
@@ -172,8 +173,7 @@ export interface Snapshot<Trsn extends AnyTrsn = AnyTrsn, Types extends MachineT
 }
 
 export type HistorySnapshot = {
-  states: string[];
-  commands: Command[];
+  entries: HistoryEntry[];
 }
 
 export type TransitionPlan<Types extends AnyMachineTypes> = {

@@ -1,5 +1,4 @@
 import { findMap } from '../helpers/array.mjs';
-import deepClone from '../helpers/deepClone.mjs';
 import { asyncFeedbackIterate, first } from '../helpers/iterator.mjs';
 import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
@@ -90,7 +89,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     }
 
     return {
-      context: deepClone(this.context.value),
+      context: this.context.getSnapshot(),
       state: this.state,
       status: this.status,
       history: this.history.getSnapshot(),

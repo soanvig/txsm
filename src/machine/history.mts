@@ -1,38 +1,48 @@
+import deepClone from '../helpers/deepClone.mjs';
 import { type Command, type HistorySnapshot } from './types.mjs';
+
+export type HistoryEntry =
+  | { type: 'state', state: string, date: number }
+  | { type: 'command', command: Command, date: number };
 
 export class History {
   constructor (
-    protected states: string[],
-    protected commands: Command[],
+    protected entries: HistoryEntry[],
   ) {}
 
   public saveState (state: string): this {
-    this.states.push(state);
+    this.entries.push({
+      type: 'state',
+      state,
+      date: Date.now(),
+    });
 
     return this;
   }
 
   public saveCommand (command: Command): this {
-    this.commands.push(command);
+    this.entries.push({
+      type: 'command',
+      command,
+      date: Date.now(),
+    });
 
     return this;
   }
 
   public getSnapshot (): HistorySnapshot {
     return {
-      commands: this.commands,
-      states: this.states,
+      entries: deepClone(this.entries),
     };
   }
 
   public static create (): History {
-    return new History([], []);
+    return new History([]);
   }
 
   public static restore (snapshot: HistorySnapshot): History {
     const history = new History(
-      snapshot.states,
-      snapshot.commands,
+      snapshot.entries,
     );
 
     return history;

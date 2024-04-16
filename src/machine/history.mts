@@ -2,8 +2,8 @@ import deepClone from '../helpers/deepClone.mjs';
 import { type Command, type HistorySnapshot } from './types.mjs';
 
 export type HistoryEntry =
-  | { type: 'state', state: string, date: number }
-  | { type: 'command', command: Command, date: number };
+  | { type: 'state', state: string, timestamp: number }
+  | { type: 'command', command: Command, timestamp: number };
 
 export class History {
   constructor (
@@ -14,7 +14,7 @@ export class History {
     this.entries.push({
       type: 'state',
       state,
-      date: Date.now(),
+      timestamp: Date.now(),
     });
 
     return this;
@@ -24,7 +24,7 @@ export class History {
     this.entries.push({
       type: 'command',
       command,
-      date: Date.now(),
+      timestamp: Date.now(),
     });
 
     return this;

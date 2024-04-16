@@ -15,7 +15,9 @@
 - [x] add history of states and operations
 - [x] handle checking if an command can be executed (with or without guards)
 - [ ] list all commands that can be executed
-- [ ] handle nested machines - probably it will be better to have "machine system" that will interwine two machines together
+- [ ] (next) handle nested machines - probably it will be better to have "machine system" that will interwine two machines together
+- [ ] (next) store more information on history (like context changes and actors invocation)
+- [ ] (next) add system for emitting internal events a user can subscribe to
 
 ## Tests
 
@@ -25,9 +27,13 @@
 - [?] add more tests to hooks
 - [x] test guards, actions and actors throwing
 - [ ] test rollback on different things than actions (however that might be not necessary, because everything necessary in start/execute is wrapped in transaction)
-- [ ] test history
+- [x] test history
 - [ ] test `canAcceptCommand`
 - [ ] test `canExecuteCommand` 
+
+## Typing
+
+- [ ] make `.run` input more strict so it cannot contain not-expected fields, context fields and actors (currently it requires what is required, but accepts other things as well)
 
 ## Validation
 

@@ -3,7 +3,7 @@ import { asyncFeedbackIterate, first } from '../helpers/iterator.mjs';
 import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
-import { History } from './history.mjs';
+import { History, type HistoryEntry } from './history.mjs';
 import { Hook } from './hook.mjs';
 import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TransitionPlan } from './types.mjs';
 
@@ -106,6 +106,10 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
   public getStatus (): RuntimeStatus {
     return this.status;
+  }
+
+  public getHistory (): HistoryEntry[] {
+    return this.history.getSnapshot().entries;
   }
 
   public async start (): Promise<void> {

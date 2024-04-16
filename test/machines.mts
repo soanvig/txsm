@@ -320,3 +320,15 @@ export const rollbackFromHookActorMachine = Txsm.create({
 }).addHook({ exit: 'intermediate' }, {
   action: ({ invoke }) => invoke('throwingActor'),
 });
+
+export const historyMachine = Txsm.create({
+  transitions: [
+    { from: 'start', to: 'intermediate', with: 'run' },
+    { from: 'intermediate', to: 'end' },
+  ],
+  config: { initial: 'start', final: ['end'] },
+}).setTypes({
+  commands: {} as {
+    run: {},
+  },
+});

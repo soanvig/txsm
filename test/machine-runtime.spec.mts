@@ -1,8 +1,9 @@
 import assert from 'node:assert';
 import test, { describe } from 'node:test';
+import { omit } from '../src/helpers/object.mjs';
 import { Txsm } from '../src/machine/state-machine.mjs';
 import { RuntimeStatus } from '../src/machine/types.mjs';
-import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, commandPayloadActionMachine, commandPayloadGuardMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackFromActionMachine, rollbackFromGuardMachine, rollbackFromHookActorMachine, rollbackFromHookMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
+import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, commandPayloadActionMachine, commandPayloadGuardMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, historyMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackFromActionMachine, rollbackFromGuardMachine, rollbackFromHookActorMachine, rollbackFromHookMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -11,12 +12,12 @@ describe('MachineRuntime', () => {
       config: { initial: 's1', final: [] },
     }).run({});
 
-    assert.deepEqual(runtime.getState(), 's1');
-    assert.deepEqual(runtime.getStatus(), RuntimeStatus.Stopped);
+    assert.deepStrictEqual(runtime.getState(), 's1');
+    assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Stopped);
 
     await runtime.start();
 
-    assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
+    assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Pending);
   });
 
   describe('transition', () => {
@@ -24,38 +25,38 @@ describe('MachineRuntime', () => {
       const runtime = lightMachine.run({});
 
       await runtime.start();
-      assert.deepEqual(runtime.getState(), 'red');
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepStrictEqual(runtime.getState(), 'red');
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Pending);
 
       await runtime.execute({ type: 'walk' });
-      assert.deepEqual(runtime.getState(), 'green');
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepStrictEqual(runtime.getState(), 'green');
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Pending);
 
       await runtime.execute({ type: 'stop' });
-      assert.deepEqual(runtime.getState(), 'red');
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepStrictEqual(runtime.getState(), 'red');
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Pending);
     });
 
     test('run automated transitions on start', async t => {
       const runtime = autoEndMachine.run({});
 
-      assert.deepEqual(runtime.getState(), 'start');
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Stopped);
+      assert.deepStrictEqual(runtime.getState(), 'start');
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Stopped);
 
       await runtime.start();
-      assert.deepEqual(runtime.getState(), 'end');
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Done);
+      assert.deepStrictEqual(runtime.getState(), 'end');
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Done);
     });
 
     test('stop automated transitions upon reaching final state', async t => {
       const runtime = autoEndContinueMachine.run({});
 
-      assert.deepEqual(runtime.getState(), 'start');
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Stopped);
+      assert.deepStrictEqual(runtime.getState(), 'start');
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Stopped);
 
       await runtime.start();
-      assert.deepEqual(runtime.getState(), 'end');
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Done);
+      assert.deepStrictEqual(runtime.getState(), 'end');
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Done);
     });
   });
 
@@ -65,25 +66,25 @@ describe('MachineRuntime', () => {
 
       await runtimeTrue.start();
       await runtimeTrue.execute({ type: 'next' });
-      assert.deepEqual(runtimeTrue.getState(), 'valueTrue');
+      assert.deepStrictEqual(runtimeTrue.getState(), 'valueTrue');
 
       const runtimeFalse = guardedManualTransitionMachine.run({ context: { value: false } });
 
       await runtimeFalse.start();
       await runtimeFalse.execute({ type: 'next' });
-      assert.deepEqual(runtimeFalse.getState(), 'valueFalse');
+      assert.deepStrictEqual(runtimeFalse.getState(), 'valueFalse');
     });
 
     test('it should select transitions based on guard (automated)', async t => {
       const runtimeTrue = guardedAutomatedTransitionMachine.run({ context: { value: true } });
 
       await runtimeTrue.start();
-      assert.deepEqual(runtimeTrue.getState(), 'valueTrue');
+      assert.deepStrictEqual(runtimeTrue.getState(), 'valueTrue');
 
       const runtimeFalse = guardedAutomatedTransitionMachine.run({ context: { value: false } });
 
       await runtimeFalse.start();
-      assert.deepEqual(runtimeFalse.getState(), 'valueFalse');
+      assert.deepStrictEqual(runtimeFalse.getState(), 'valueFalse');
     });
 
     test('it should select transition based on one of multiple guards (manual)', async t => {
@@ -93,7 +94,7 @@ describe('MachineRuntime', () => {
         await runtime.start();
         await runtime.execute({ type: 'run' });
 
-        assert.deepEqual(runtime.getState(), `value${value}`);
+        assert.deepStrictEqual(runtime.getState(), `value${value}`);
       }
 
       const noTransitionRuntime = multipleGuardsManualTransitionMachine.run({ context: { value: 0 }});
@@ -106,12 +107,12 @@ describe('MachineRuntime', () => {
         const runtime = multipleGuardsAutomatedTransitionMachine.run({ context: { value }});
 
         await runtime.start();
-        assert.deepEqual(runtime.getState(), `value${value}`);
+        assert.deepStrictEqual(runtime.getState(), `value${value}`);
       }
 
       const noTransitionRuntime = multipleGuardsAutomatedTransitionMachine.run({ context: { value: 0 }});
       await noTransitionRuntime.start();
-      assert.deepEqual(noTransitionRuntime.getState(), 'start');
+      assert.deepStrictEqual(noTransitionRuntime.getState(), 'start');
     });
   });
 
@@ -121,31 +122,31 @@ describe('MachineRuntime', () => {
       const runtime = makeEffectCallbackMachine(() => { counter += 1; }).run({});
 
       await runtime.start();
-      assert.deepEqual(counter, 3);
-      assert.deepEqual(runtime.getState(), 'end');
+      assert.deepStrictEqual(counter, 3);
+      assert.deepStrictEqual(runtime.getState(), 'end');
     });
 
     test('it should assign values to context', async t => {
       const runtime = counterMachine.run({ context: { value: 1 } });
 
       await runtime.start();
-      assert.deepEqual(runtime.getContext().value, 1);
+      assert.deepStrictEqual(runtime.getContext().value, 1);
 
       await runtime.execute({ type: 'increment' });
-      assert.deepEqual(runtime.getContext().value, 2);
+      assert.deepStrictEqual(runtime.getContext().value, 2);
 
       await runtime.execute({ type: 'incrementTwice' });
-      assert.deepEqual(runtime.getContext().value, 4);
+      assert.deepStrictEqual(runtime.getContext().value, 4);
 
       await runtime.execute({ type: 'increment' });
-      assert.deepEqual(runtime.getContext().value, 5);
+      assert.deepStrictEqual(runtime.getContext().value, 5);
     });
 
     test('it should properly merge context', async t => {
       const runtime = mergeContextMachine.run({ context: { value0: true, value1: false, value2: [false], value3: { subValue1: true } } });
 
       await runtime.start();
-      assert.deepEqual(runtime.getContext(), {
+      assert.deepStrictEqual(runtime.getContext(), {
         value0: true,
         value1: true,
         value2: [true],
@@ -162,7 +163,7 @@ describe('MachineRuntime', () => {
       });
 
       await runtime.start();
-      assert.deepEqual(runtime.getContext().value, 7);
+      assert.deepStrictEqual(runtime.getContext().value, 7);
     });
   });
 
@@ -172,7 +173,7 @@ describe('MachineRuntime', () => {
 
       await runtime.start();
 
-      assert.deepEqual(runtime.getContext(), { entry: 1, exit: 1 });
+      assert.deepStrictEqual(runtime.getContext(), { entry: 1, exit: 1 });
     });
 
     test('it should call entry and exit hook if defined as any (*)', async () => {
@@ -180,7 +181,7 @@ describe('MachineRuntime', () => {
 
       await runtime.start();
 
-      assert.deepEqual(runtime.getContext(), { entry: 1, exit: 1 });
+      assert.deepStrictEqual(runtime.getContext(), { entry: 1, exit: 1 });
     });
   });
 
@@ -191,22 +192,22 @@ describe('MachineRuntime', () => {
       await runtimeBeforeSnapshot.start();
       await runtimeBeforeSnapshot.execute({ type: 'run' });
 
-      assert.deepEqual(runtimeBeforeSnapshot.getContext(), { value: 1 });
-      assert.deepEqual(runtimeBeforeSnapshot.getState(), 'intermediate');
-      assert.deepEqual(runtimeBeforeSnapshot.getStatus(), RuntimeStatus.Pending);
+      assert.deepStrictEqual(runtimeBeforeSnapshot.getContext(), { value: 1 });
+      assert.deepStrictEqual(runtimeBeforeSnapshot.getState(), 'intermediate');
+      assert.deepStrictEqual(runtimeBeforeSnapshot.getStatus(), RuntimeStatus.Pending);
 
       const snapshot = runtimeBeforeSnapshot.getSnapshot();
       const runtimeAfterSnapshot = snapshotMachine.restoreRuntime({ snapshot });
 
-      assert.deepEqual(runtimeAfterSnapshot.getContext(), { value: 1 });
-      assert.deepEqual(runtimeAfterSnapshot.getState(), 'intermediate');
-      assert.deepEqual(runtimeAfterSnapshot.getStatus(), RuntimeStatus.Pending);
+      assert.deepStrictEqual(runtimeAfterSnapshot.getContext(), { value: 1 });
+      assert.deepStrictEqual(runtimeAfterSnapshot.getState(), 'intermediate');
+      assert.deepStrictEqual(runtimeAfterSnapshot.getStatus(), RuntimeStatus.Pending);
 
       await runtimeAfterSnapshot.execute({ type: 'finish' });
 
-      assert.deepEqual(runtimeAfterSnapshot.getContext(), { value: 2 });
-      assert.deepEqual(runtimeAfterSnapshot.getState(), 'end');
-      assert.deepEqual(runtimeAfterSnapshot.getStatus(), RuntimeStatus.Done);
+      assert.deepStrictEqual(runtimeAfterSnapshot.getContext(), { value: 2 });
+      assert.deepStrictEqual(runtimeAfterSnapshot.getState(), 'end');
+      assert.deepStrictEqual(runtimeAfterSnapshot.getStatus(), RuntimeStatus.Done);
     });
   });
 
@@ -216,9 +217,9 @@ describe('MachineRuntime', () => {
 
       await assert.rejects(runtime.start());
 
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Stopped);
-      assert.deepEqual(runtime.getState(), 'start');
-      assert.deepEqual(runtime.getContext(), { value: false });
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Stopped);
+      assert.deepStrictEqual(runtime.getState(), 'start');
+      assert.deepStrictEqual(runtime.getContext(), { value: false });
     });
 
     test('rollback on command after unsucessful action', async t => {
@@ -228,9 +229,9 @@ describe('MachineRuntime', () => {
 
       await assert.rejects(runtime.execute({ type: 'run' }));
 
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
-      assert.deepEqual(runtime.getState(), 'start');
-      assert.deepEqual(runtime.getContext(), { value: false });
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepStrictEqual(runtime.getState(), 'start');
+      assert.deepStrictEqual(runtime.getContext(), { value: false });
     });
 
     test('rollback on guard throw', async t => {
@@ -239,9 +240,9 @@ describe('MachineRuntime', () => {
       await runtime.start();
       await assert.rejects(runtime.execute({ type: 'run' }));
 
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
-      assert.deepEqual(runtime.getState(), 'start');
-      assert.deepEqual(runtime.getContext(), {});
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepStrictEqual(runtime.getState(), 'start');
+      assert.deepStrictEqual(runtime.getContext(), {});
     });
 
     test('rollback on hook throw', async t => {
@@ -250,9 +251,9 @@ describe('MachineRuntime', () => {
       await runtime.start();
       await assert.rejects(runtime.execute({ type: 'run' }));
 
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
-      assert.deepEqual(runtime.getState(), 'start');
-      assert.deepEqual(runtime.getContext(), {});
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepStrictEqual(runtime.getState(), 'start');
+      assert.deepStrictEqual(runtime.getContext(), {});
     });
 
     test('rollback on hook actor throw', async t => {
@@ -267,9 +268,9 @@ describe('MachineRuntime', () => {
       await runtime.start();
       await assert.rejects(runtime.execute({ type: 'run' }));
 
-      assert.deepEqual(runtime.getStatus(), RuntimeStatus.Pending);
-      assert.deepEqual(runtime.getState(), 'start');
-      assert.deepEqual(runtime.getContext(), {});
+      assert.deepStrictEqual(runtime.getStatus(), RuntimeStatus.Pending);
+      assert.deepStrictEqual(runtime.getState(), 'start');
+      assert.deepStrictEqual(runtime.getContext(), {});
     });
   });
 
@@ -280,13 +281,13 @@ describe('MachineRuntime', () => {
       await runtime.start();
 
       await runtime.execute({ type: 'add', value: 2 });
-      assert.deepEqual(runtime.getContext(), { value: 2 });
+      assert.deepStrictEqual(runtime.getContext(), { value: 2 });
 
       await runtime.execute({ type: 'add', value: 3 });
-      assert.deepEqual(runtime.getContext(), { value: 5 });
+      assert.deepStrictEqual(runtime.getContext(), { value: 5 });
 
       await runtime.execute({ type: 'add', value: 10 });
-      assert.deepEqual(runtime.getContext(), { value: 15 });
+      assert.deepStrictEqual(runtime.getContext(), { value: 15 });
     });
 
     test('it should carry command over to effect guard', async t => {
@@ -294,13 +295,31 @@ describe('MachineRuntime', () => {
 
       await trueRuntime.start();
       await trueRuntime.execute({ type: 'run', value: true });
-      assert.deepEqual(trueRuntime.getState(), 'true');
+      assert.deepStrictEqual(trueRuntime.getState(), 'true');
 
       const falseRuntime = commandPayloadGuardMachine.run({});
 
       await falseRuntime.start();
       await falseRuntime.execute({ type: 'run', value: false });
-      assert.deepEqual(falseRuntime.getState(), 'false');
+      assert.deepStrictEqual(falseRuntime.getState(), 'false');
+    });
+  });
+
+  describe('History', () => {
+    test('should store history of commands and states', async t => {
+      const runtime = historyMachine.run({});
+
+      await runtime.start();
+      await runtime.execute({ type: 'run' });
+
+      const history = runtime.getHistory();
+
+      assert.deepStrictEqual(history.map(e => omit(e, 'timestamp')), [
+        { type: 'state', state: 'start' },
+        { type: 'command', command: { type: 'run' } },
+        { type: 'state', state: 'intermediate' },
+        { type: 'state', state: 'end' },
+      ]);
     });
   });
 });

@@ -387,5 +387,23 @@ describe('MachineRuntime', () => {
       assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'finish', value: true }), false);
       assert.deepStrictEqual(await runtime.canExecuteCommand({ type: 'foobar', value: true } as any), false);
     });
+
+    test('getAcceptableCommands', async t => {
+      const runtime = canAcceptCommandMachine.run({});
+
+      assert.deepStrictEqual(runtime.getAcceptableCommands(), []);
+
+      await runtime.start();
+
+      assert.deepStrictEqual(runtime.getAcceptableCommands(), [{ type: 'next' }]);
+
+      await runtime.execute({ type: 'next' });
+
+      assert.deepStrictEqual(runtime.getAcceptableCommands(), [{ type: 'finish' }]);
+
+      await runtime.execute({ type: 'finish' });
+
+      assert.deepStrictEqual(runtime.getAcceptableCommands(), []);
+    });
   });
 });

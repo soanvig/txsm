@@ -35,10 +35,11 @@ export class Transition<From extends string, To extends string, Name extends str
     return this.name !== null;
   }
 
-  public getTransition (): { from: string, to: string } {
+  public getTransition (): { from: string, to: string, name: Name } {
     return {
       from: this.from,
       to: this.to,
+      name: this.name,
     };
   }
 

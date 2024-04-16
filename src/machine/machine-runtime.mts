@@ -5,7 +5,7 @@ import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
 import { History, type HistoryEntry } from './history.mjs';
 import { Hook } from './hook.mjs';
-import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TransitionPlan } from './types.mjs';
+import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type Command, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TransitionPlan } from './types.mjs';
 
 export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
   protected stateMachine: StateMachine<Trsn, Types>;
@@ -127,6 +127,12 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
       this.status = this.isFinal() ? RuntimeStatus.Done : RuntimeStatus.Pending;
     });
+  }
+
+  public getAcceptableCommands (): Command[] {
+    return this.stateMachine.$transitions.filter(t => t.isManual())
+      .map(t => ({ type: t.getTransition().name as string }))
+      .filter(c => this.canAcceptCommand(c));
   }
 
   public canAcceptCommand (command: { type: keyof Types['commands'] }): boolean {

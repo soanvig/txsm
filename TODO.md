@@ -14,7 +14,7 @@
 - [x] handle command in effects guards
 - [x] add history of states and operations
 - [x] handle checking if an command can be executed (with or without guards)
-- [ ] list all commands that can be executed
+- [x] list all commands that can be accepted
 - [ ] (next) handle nested machines - probably it will be better to have "machine system" that will interwine two machines together
 - [ ] (next) store more information on history (like context changes and actors invocation)
 - [ ] (next) add system for emitting internal events a user can subscribe to

@@ -60,6 +60,7 @@
 - [x] partial .setTypes
 - [x] change architecture: create transition planner (generator) which results will be passed to executor which uses action as generator etc (everything will happen step by step)
 - [ ] CI
-  - [ ] test pipeline
+  - [x] test pipeline
   - [ ] release and versioning pipeline
 - [x] freeze context before passing it down to the guards, actions, etc
+- [ ] unify hooks and effects into single thing

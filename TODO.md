@@ -40,7 +40,7 @@
 - [?] add more tests to effects (guards)
 - [?] add more tests to actions
 - [?] add more tests to hooks 
-- [ ] test rollback on different things than actions (however that might be not necessary, because everything necessary in start/execute is wrapped in transaction)
+- [?] test rollback on different things than actions (however that might be not necessary, because everything necessary in start/execute is wrapped in transaction)
 
 ## Typing
 
@@ -50,8 +50,8 @@
 
 - [x] validate if provided snapshot matches state machine (state mostly, because we can't check context)
 - [x] validate if there is only one effect per transition
-- [ ] (optionally) detect loop of automated transitions
-- [ ] validate if final state doesn't have automated transition from it (execution stops there, but validation might help debugging) 
+- [?] detect loop of automated transitions
+- [?] validate if final state doesn't have automated transition from it (execution stops there, but validation might help debugging) 
 
 ## Chores
 
@@ -62,4 +62,4 @@
 - [ ] CI
   - [ ] test pipeline
   - [ ] release and versioning pipeline
-- [ ] (optionally) freeze context before passing it down to the guards, actions, etc
+- [x] freeze context before passing it down to the guards, actions, etc

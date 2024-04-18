@@ -1,5 +1,4 @@
 import { Action } from './action.mjs';
-import { type Context } from './context.mjs';
 import { ActionType, type ActionResult, type ActionStepPayload, type AnyMachineTypes, type AnyTrsn, type CommandPayload, type MachineEffect } from './types.mjs';
 
 export class Effect<Types extends AnyMachineTypes> {
@@ -31,7 +30,7 @@ export class Effect<Types extends AnyMachineTypes> {
     }
 
     const collectedAction = this.effect.action({
-      context: context.value,
+      context,
       assign: newContext => Action.from({ type: ActionType.Assign, newContext }),
       invoke: (actorName, ...parameters) => Action.from({ type: ActionType.Invoke, actorName, parameters }),
       command,
@@ -41,8 +40,8 @@ export class Effect<Types extends AnyMachineTypes> {
     yield* collectedAction.iterate({ context });
   }
 
-  public testGuard (payload: { context: Context<Types['context']>, command: CommandPayload }): boolean {
-    if (this.effect.guard && !this.effect.guard({ context: payload.context.value, command: payload.command })) {
+  public testGuard (payload: { context: Types['context'], command: CommandPayload }): boolean {
+    if (this.effect.guard && !this.effect.guard({ context: payload.context, command: payload.command })) {
       return false;
     }
 

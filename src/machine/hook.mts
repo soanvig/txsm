@@ -31,7 +31,7 @@ export class Hook<Types extends AnyMachineTypes> {
     }
 
     const collectedAction = this.hook.action({
-      context: context.value,
+      context,
       assign: newContext => Action.from({ type: ActionType.Assign, newContext }),
       invoke: (actorName, ...parameters) => Action.from({ type: ActionType.Invoke, actorName, parameters }),
       from: Action.from,

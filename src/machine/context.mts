@@ -11,6 +11,10 @@ export class Context<C extends ContextValue> {
     return new Context(value);
   }
 
+  public getReadonly (): C {
+    return deepClone(this.value);
+  }
+
   public getSnapshot (): C {
     return deepClone(this.value);
   }

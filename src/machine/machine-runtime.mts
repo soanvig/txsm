@@ -176,7 +176,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected async executeTransition ({ effect, transition, command }: TransitionPlan<Types>): Promise<void> {
     const target = transition.getTarget(this.state) as StateMachineState<Trsn>;
 
-    await asyncFeedbackIterate(effect.execute({ context: this.context, result: undefined, command }), async result => {
+    await asyncFeedbackIterate(effect.execute({ context: this.context.value, result: undefined, command }), async result => {
       return await this.processActionResult(result, command);
     });
 
@@ -188,7 +188,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
     const exitHooks = this.hooks.filter(h => h.exitMatches(this.state));
     for (const hook of exitHooks) {
-      await asyncFeedbackIterate(hook.execute({ context: this.context, result: undefined, command }), async result => {
+      await asyncFeedbackIterate(hook.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);
       });
     }
@@ -198,7 +198,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
     const enterHooks = this.hooks.filter(h => h.enterMatches(state));
     for (const hook of enterHooks) {
-      await asyncFeedbackIterate(hook.execute({ context: this.context, result: undefined, command }), async result => {
+      await asyncFeedbackIterate(hook.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);
       });
     }
@@ -234,7 +234,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
           return { transition: t, effect: Effect.emptyFor(t), command };
         }
 
-        if (!effect.testGuard({ context: this.context, command: command ?? {} })) {
+        if (!effect.testGuard({ context: this.context.getReadonly(), command: command ?? {} })) {
           return null;
         }
 
@@ -262,14 +262,14 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       case ActionType.Call:
         return {
           result: await actionResult.result,
-          context: this.context.value,
+          context: this.context.getReadonly(),
           command,
         };
       case ActionType.Assign:
         this.context = this.context.merge(actionResult.newContext);
         return {
           result: undefined,
-          context: this.context.value,
+          context: this.context.getReadonly(),
           command,
         };
       case ActionType.Invoke:
@@ -278,7 +278,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
 
         return {
           result: await actor(...actionResult.parameters),
-          context: this.context.value,
+          context: this.context.getReadonly(),
           command,
         };
       default:

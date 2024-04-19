@@ -4,7 +4,6 @@ import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
 import { History, type HistoryEntry } from './history.mjs';
-import { Hook } from './hook.mjs';
 import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type Command, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TransitionPlan } from './types.mjs';
 
 export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
@@ -14,7 +13,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected status: RuntimeStatus;
   protected effects: Effect<Types>[];
   protected actors: Types['actors'];
-  protected hooks: Hook<Types>[];
   protected history: History;
 
   protected constructor (
@@ -25,7 +23,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       status: RuntimeStatus;
       effects: Effect<Types>[];
       actors: Types['actors'];
-      hooks: Hook<Types>[];
       history: History;
     },
   ) {
@@ -35,7 +32,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     this.actors = payload.actors;
     this.context = payload.context;
     this.effects = payload.effects;
-    this.hooks = payload.hooks;
     this.history = payload.history;
   }
 
@@ -52,7 +48,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       actors,
       context: Context.create(context),
       effects: stateMachine.$effects.map(Effect.fromObject),
-      hooks: stateMachine.$hooks.map(Hook.fromObject),
       history: History.create().saveState(state),
     });
   }
@@ -78,7 +73,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       actors,
       context: Context.create(snapshot.context),
       effects: stateMachine.$effects.map(Effect.fromObject),
-      hooks: stateMachine.$hooks.map(Hook.fromObject),
       history: History.restore(snapshot.history),
     });
   }
@@ -186,9 +180,9 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected async changeState (state: StateMachineState<Trsn>): Promise<void> {
     const command = null;
 
-    const exitHooks = this.hooks.filter(h => h.exitMatches(this.state));
-    for (const hook of exitHooks) {
-      await asyncFeedbackIterate(hook.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
+    const exitEffects = this.effects.filter(e => e.matchesExit(this.state));
+    for (const effect of exitEffects) {
+      await asyncFeedbackIterate(effect.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);
       });
     }
@@ -196,9 +190,9 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     this.state = state;
     this.history.saveState(state);
 
-    const enterHooks = this.hooks.filter(h => h.enterMatches(state));
-    for (const hook of enterHooks) {
-      await asyncFeedbackIterate(hook.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
+    const enterEffects = this.effects.filter(h => h.matchesEnter(state));
+    for (const effect of enterEffects) {
+      await asyncFeedbackIterate(effect.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);
       });
     }
@@ -228,7 +222,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
         });
 
       const transition = findMap(applicableTransitions, (t): TransitionPlan<Types> | null => {
-        const effect = this.effects.find(e => e.matches(t));
+        const effect = this.effects.find(e => e.matchesTransition(t));
 
         if (!effect) {
           return { transition: t, effect: Effect.emptyFor(t), command };

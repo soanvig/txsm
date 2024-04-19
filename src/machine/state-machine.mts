@@ -1,26 +1,27 @@
+import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
 import { MachineRuntime } from './machine-runtime.mjs';
 import { Transition } from './transition.mjs';
-import { type AnyTrsn, type AnyTrsnObject, type CommandPayload, type MachineConfig, type MachineEffect, type MachineTypes, type StateMachine, type StateMachineBuilder, type TrsnObjectToTrsn } from './types.mjs';
+import { type AnyTrsn, type AnyTrsnObject, type CommandPayload, type EffectCondition, type MachineConfig, type MachineEffect, type MachineTypes, type StateMachine, type StateMachineBuilder, type TrsnObjectToTrsn } from './types.mjs';
 
 const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>>(stateMachine: StateMachine<Trsn, Types>): StateMachineBuilder<Trsn, Types> => {
   const builder: StateMachineBuilder<Trsn, Types> = {
-    addEffect: (from, to, effect) => {
-      const existingEffect = stateMachine.$effects.some(e => e.from === from && e.to === to);
+    addEffect: (condition: EffectCondition, effect: MachineEffect<any, never>) => {
+      if ('from' in condition) {
+        const existingEffect = stateMachine.$effects.some(e => {
+          if (Effect.isTrsnCondition(e.condition)) {
+            return e.condition.from === condition.from && e.condition.to === condition.to;
+          }
+        });
 
-      if (existingEffect) {
-        throw new MachineError(ErrorCode.DuplicatedEffect, { from, to });
+        if (existingEffect) {
+          throw new MachineError(ErrorCode.DuplicatedEffect, condition);
+        }
       }
 
       return makeStateMachineBuilder({
         ...stateMachine,
-        $effects: stateMachine.$effects.concat({ from, to, effect: effect as MachineEffect<Types, CommandPayload | null> }),
-      });
-    },
-    addHook: (hookSettings, hook) => {
-      return makeStateMachineBuilder({
-        ...stateMachine,
-        $hooks: stateMachine.$hooks.concat({ ...hookSettings, hook }),
+        $effects: stateMachine.$effects.concat({ condition, effect: effect as MachineEffect<Types, CommandPayload | null> }),
       });
     },
     setTypes: types => {
@@ -53,7 +54,6 @@ export const Txsm = {
     return makeStateMachineBuilder({
       $config: params.config,
       $effects: [],
-      $hooks: [],
       $transitions: params.transitions.map(t => Transition.fromObject(t)),
       $types: {
         actors: {},

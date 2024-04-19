@@ -15,12 +15,12 @@ describe('StateMachine', () => {
     const sm = Txsm.create({
       transitions,
       config,
-    }).addEffect('s1', 's2', effects[0]).getStateMachine();
+    }).addEffect({ from: 's1', to: 's2' }, effects[0]).getStateMachine();
 
     assert.deepEqual(sm.$transitions, [Transition.fromObject(transitions[0])]);
     assert.deepEqual(sm.$config, config);
     assert.deepEqual(sm.$effects, [
-      { from: 's1', to: 's2', effect: effects[0] },
+      { condition: { from: 's1', to: 's2' }, effect: effects[0] },
     ]);
   });
 
@@ -28,8 +28,8 @@ describe('StateMachine', () => {
     const sm = Txsm.create({
       transitions: [{ from: 's1', to: 's2' }],
       config: { initial: 's1', final: [] },
-    }).addEffect('s1', 's2', {});
+    }).addEffect({ from: 's1', to: 's2' }, {});
 
-    assert.throws(() => sm.addEffect('s1', 's2', {}));
+    assert.throws(() => sm.addEffect({ from: 's1', to: 's2' }, {}));
   });
 });

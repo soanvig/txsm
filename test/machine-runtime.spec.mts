@@ -3,7 +3,7 @@ import test, { describe } from 'node:test';
 import { omit } from '../src/helpers/object.mjs';
 import { Txsm } from '../src/machine/state-machine.mjs';
 import { RuntimeStatus } from '../src/machine/types.mjs';
-import { actorAssignMachine, anyExitAnyEntryHookMachine, autoEndContinueMachine, autoEndMachine, canAcceptCommandMachine, canExecuteCommandMachine, commandPayloadActionMachine, commandPayloadGuardMachine, counterMachine, exitEntryHookMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, historyMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackFromActionMachine, rollbackFromGuardMachine, rollbackFromHookActorMachine, rollbackFromHookMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
+import { actorAssignMachine, anyExitAnyEntryEffectMachine, autoEndContinueMachine, autoEndMachine, canAcceptCommandMachine, canExecuteCommandMachine, commandPayloadActionMachine, commandPayloadGuardMachine, counterMachine, exitEntryEffectMachine, exitEntryGuardEffectMachine, guardedAutomatedTransitionMachine, guardedManualTransitionMachine, historyMachine, lightMachine, makeEffectCallbackMachine, mergeContextMachine, multipleGuardsAutomatedTransitionMachine, multipleGuardsManualTransitionMachine, rollbackFromActionMachine, rollbackFromGuardMachine, rollbackFromHookActorMachine, rollbackFromHookMachine, rollbackStartMachine, snapshotMachine } from './machines.mjs';
 
 describe('MachineRuntime', () => {
   test('initialization', async () => {
@@ -165,23 +165,32 @@ describe('MachineRuntime', () => {
       await runtime.start();
       assert.deepStrictEqual(runtime.getContext().value, 7);
     });
-  });
 
-  describe('Hook action', () => {
-    test('it should call entry and exit hook', async () => {
-      const runtime = exitEntryHookMachine.run({ context: { entry: 0, exit: 0 }});
+    test('it should call entry and exit effect', async () => {
+      const runtime = exitEntryEffectMachine.run({ context: { entry: 0, exit: 0 }});
 
       await runtime.start();
 
       assert.deepStrictEqual(runtime.getContext(), { entry: 1, exit: 1 });
     });
 
-    test('it should call entry and exit hook if defined as any (*)', async () => {
-      const runtime = anyExitAnyEntryHookMachine.run({ context: { entry: 0, exit: 0 }});
+    test('it should call entry and exit effect if defined as any (*)', async () => {
+      const runtime = anyExitAnyEntryEffectMachine.run({ context: { entry: 0, exit: 0 }});
 
       await runtime.start();
 
       assert.deepStrictEqual(runtime.getContext(), { entry: 1, exit: 1 });
+    });
+
+    test('it should call entry and exit effect only if guard is met', async () => {
+      const falseRuntime = exitEntryGuardEffectMachine.run({ context: { value: false, counter: 0 }});
+      const trueRuntime = exitEntryGuardEffectMachine.run({ context: { value: true, counter: 0 }});
+
+      await falseRuntime.start();
+      await trueRuntime.start();
+
+      assert.deepStrictEqual(falseRuntime.getContext().counter, 0);
+      assert.deepStrictEqual(trueRuntime.getContext().counter, 2);
     });
   });
 

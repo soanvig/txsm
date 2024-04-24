@@ -1,6 +1,5 @@
 import { Effect } from './effect.mjs';
 import { MachineRuntime } from './machine-runtime.mjs';
-import { validateStateMachine } from './state-machine-validator.mjs';
 import { Transition } from './transition.mjs';
 import type { AnyTrsn, AnyTrsnObject, CommandPayload, MachineConfig, MachineEffect, MachineEffectCondition, MachineTypes, StateMachine, StateMachineBuilder, TrsnObjectToTrsn } from './types.mjs';
 
@@ -15,8 +14,6 @@ const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineType
         ),
       };
 
-      validateStateMachine(newStateMachine);
-
       return makeStateMachineBuilder(newStateMachine);
     },
     setTypes: types => {
@@ -24,8 +21,6 @@ const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineType
         ...stateMachine,
         $types: types as any,
       };
-
-      validateStateMachine(newStateMachine);
 
       return makeStateMachineBuilder(newStateMachine);
     },

@@ -161,7 +161,7 @@ export const mergeContextMachine = Txsm.create({
       .then(assign({ value3: { subValue2: true }})),
 });
 
-export const exitEntryHookMachine = Txsm.create({
+export const exitEntryEffectMachine = Txsm.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],
@@ -174,7 +174,7 @@ export const exitEntryHookMachine = Txsm.create({
   action: ({ assign, context }) => assign({ exit: context.exit + 1 }),
 });
 
-export const anyExitAnyEntryHookMachine = Txsm.create({
+export const anyExitAnyEntryEffectMachine = Txsm.create({
   transitions: [
     { from: 'pending', to: 'end' },
   ],
@@ -186,6 +186,27 @@ export const anyExitAnyEntryHookMachine = Txsm.create({
 }).addEffect({ exit: '*' }, {
   action: ({ assign, context }) => assign({ exit: context.exit + 1 }),
 });
+
+export const exitEntryGuardEffectMachine = Txsm.create({
+  transitions: [
+    { from: 'pending', to: 'end' },
+  ],
+  config: { initial: 'pending', final: ['end'] },
+})
+  .setTypes({
+    context: {} as {
+      value: boolean,
+      counter: number,
+    },
+  })
+  .addEffect({ enter: 'end' }, {
+    guard: ({ context }) => context.value === true,
+    action: ({ assign, context }) => assign({ counter: context.counter + 1 }),
+  })
+  .addEffect({ exit: 'pending' }, {
+    guard: ({ context }) => context.value === true,
+    action: ({ assign, context }) => assign({ counter: context.counter + 1 }),
+  });
 
 export const snapshotMachine = Txsm.create({
   transitions: [

@@ -174,9 +174,10 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   }
 
   protected async changeState (state: StateMachineState<Trsn>): Promise<void> {
-    const command = null;
+    const command: any = null; // We pass null, but it doesn't satisfy CommandPayload. This is OK
+    const context = this.context.getReadonly();
 
-    const exitEffects = this.stateMachine.$effects.filter(e => e.matchesExit(this.state));
+    const exitEffects = this.stateMachine.$effects.filter(e => e.matchesExit(this.state) && e.testGuard({ context, command }));
     for (const effect of exitEffects) {
       await asyncFeedbackIterate(effect.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);
@@ -186,7 +187,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     this.state = state;
     this.history.saveState(state);
 
-    const enterEffects = this.stateMachine.$effects.filter(h => h.matchesEnter(state));
+    const enterEffects = this.stateMachine.$effects.filter(e => e.matchesEnter(state) && e.testGuard({ context, command }));
     for (const effect of enterEffects) {
       await asyncFeedbackIterate(effect.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);

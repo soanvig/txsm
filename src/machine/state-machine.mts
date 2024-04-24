@@ -1,33 +1,28 @@
-import { ErrorCode, MachineError } from './errors.mjs';
+import { Effect } from './effect.mjs';
 import { MachineRuntime } from './machine-runtime.mjs';
 import { Transition } from './transition.mjs';
-import { type AnyTrsn, type AnyTrsnObject, type CommandPayload, type MachineConfig, type MachineEffect, type MachineTypes, type StateMachine, type StateMachineBuilder, type TrsnObjectToTrsn } from './types.mjs';
+import type { AnyTrsn, AnyTrsnObject, CommandPayload, MachineConfig, MachineEffect, MachineEffectCondition, MachineTypes, StateMachine, StateMachineBuilder, TrsnObjectToTrsn } from './types.mjs';
 
 const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>>(stateMachine: StateMachine<Trsn, Types>): StateMachineBuilder<Trsn, Types> => {
   const builder: StateMachineBuilder<Trsn, Types> = {
-    addEffect: (from, to, effect) => {
-      const existingEffect = stateMachine.$effects.some(e => e.from === from && e.to === to);
-
-      if (existingEffect) {
-        throw new MachineError(ErrorCode.DuplicatedEffect, { from, to });
-      }
-
-      return makeStateMachineBuilder({
+    // Ignore that effect has MachineEffect<never> type. It is the only type compatible. The signature takes care of overloading
+    addEffect: (condition: MachineEffectCondition, effect: MachineEffect<any, never>) => {
+      const newStateMachine = {
         ...stateMachine,
-        $effects: stateMachine.$effects.concat({ from, to, effect: effect as MachineEffect<Types, CommandPayload | null> }),
-      });
-    },
-    addHook: (hookSettings, hook) => {
-      return makeStateMachineBuilder({
-        ...stateMachine,
-        $hooks: stateMachine.$hooks.concat({ ...hookSettings, hook }),
-      });
+        $effects: stateMachine.$effects.concat(
+          Effect.fromObject({ condition, effect: effect as MachineEffect<Types, CommandPayload | null> }),
+        ),
+      };
+
+      return makeStateMachineBuilder(newStateMachine);
     },
     setTypes: types => {
-      return makeStateMachineBuilder({
+      const newStateMachine = {
         ...stateMachine,
         $types: types as any,
-      }) as any;
+      };
+
+      return makeStateMachineBuilder(newStateMachine);
     },
     getStateMachine: () => {
       return stateMachine;
@@ -53,7 +48,6 @@ export const Txsm = {
     return makeStateMachineBuilder({
       $config: params.config,
       $effects: [],
-      $hooks: [],
       $transitions: params.transitions.map(t => Transition.fromObject(t)),
       $types: {
         actors: {},

@@ -4,7 +4,6 @@ import { Context } from './context.mjs';
 import { Effect } from './effect.mjs';
 import { ErrorCode, MachineError } from './errors.mjs';
 import { History, type HistoryEntry } from './history.mjs';
-import { Hook } from './hook.mjs';
 import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type Command, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TransitionPlan } from './types.mjs';
 
 export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
@@ -12,9 +11,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected context: Context<StateMachineContext<Types>>;
   protected state: StateMachineState<Trsn>;
   protected status: RuntimeStatus;
-  protected effects: Effect<Types>[];
   protected actors: Types['actors'];
-  protected hooks: Hook<Types>[];
   protected history: History;
 
   protected constructor (
@@ -23,9 +20,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       context: Context<StateMachineContext<Types>>;
       state: StateMachineState<Trsn>;
       status: RuntimeStatus;
-      effects: Effect<Types>[];
       actors: Types['actors'];
-      hooks: Hook<Types>[];
       history: History;
     },
   ) {
@@ -34,8 +29,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     this.state = payload.state;
     this.actors = payload.actors;
     this.context = payload.context;
-    this.effects = payload.effects;
-    this.hooks = payload.hooks;
     this.history = payload.history;
   }
 
@@ -51,8 +44,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       state,
       actors,
       context: Context.create(context),
-      effects: stateMachine.$effects.map(Effect.fromObject),
-      hooks: stateMachine.$hooks.map(Hook.fromObject),
       history: History.create().saveState(state),
     });
   }
@@ -77,8 +68,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       state: snapshot.state as any,
       actors,
       context: Context.create(snapshot.context),
-      effects: stateMachine.$effects.map(Effect.fromObject),
-      hooks: stateMachine.$hooks.map(Hook.fromObject),
       history: History.restore(snapshot.history),
     });
   }
@@ -130,7 +119,8 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   }
 
   public getAcceptableCommands (): Command[] {
-    return this.stateMachine.$transitions.filter(t => t.isManual())
+    return this.stateMachine.$transitions
+      .filter(t => t.isManual())
       .map(t => ({ type: t.getTransition().name as string }))
       .filter(c => this.canAcceptCommand(c));
   }
@@ -184,11 +174,12 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   }
 
   protected async changeState (state: StateMachineState<Trsn>): Promise<void> {
-    const command = null;
+    const command: any = null; // We pass null, but it doesn't satisfy CommandPayload. This is OK
+    const context = this.context.getReadonly();
 
-    const exitHooks = this.hooks.filter(h => h.exitMatches(this.state));
-    for (const hook of exitHooks) {
-      await asyncFeedbackIterate(hook.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
+    const exitEffects = this.stateMachine.$effects.filter(e => e.matchesExit(this.state) && e.testGuard({ context, command }));
+    for (const effect of exitEffects) {
+      await asyncFeedbackIterate(effect.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);
       });
     }
@@ -196,9 +187,9 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     this.state = state;
     this.history.saveState(state);
 
-    const enterHooks = this.hooks.filter(h => h.enterMatches(state));
-    for (const hook of enterHooks) {
-      await asyncFeedbackIterate(hook.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
+    const enterEffects = this.stateMachine.$effects.filter(e => e.matchesEnter(state) && e.testGuard({ context, command }));
+    for (const effect of enterEffects) {
+      await asyncFeedbackIterate(effect.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);
       });
     }
@@ -228,7 +219,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
         });
 
       const transition = findMap(applicableTransitions, (t): TransitionPlan<Types> | null => {
-        const effect = this.effects.find(e => e.matches(t));
+        const effect = this.stateMachine.$effects.find(e => e.matchesTransition(t));
 
         if (!effect) {
           return { transition: t, effect: Effect.emptyFor(t), command };
@@ -260,6 +251,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected async processActionResult (actionResult: ActionResult<Types>, command: StateMachineCommands<Types> | null): Promise<ActionStepPayload<Types, any>> {
     switch (actionResult.type) {
       case ActionType.Call:
+        // Call action is resolved inside the Action object, so we just unwrap the result here
         return {
           result: await actionResult.result,
           context: this.context.getReadonly(),

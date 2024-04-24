@@ -15,7 +15,7 @@
 - [x] add history of states and operations
 - [x] handle checking if an command can be executed (with or without guards)
 - [x] list all commands that can be accepted
-- [ ] (next) handle nested machines - probably it will be better to have "machine system" that will interwine two machines together
+- [ ] (next) handle nested machines - probably it will be better to have "machine system" that will intertwine two machines together
 - [ ] (next) store more information on history (like context changes and actors invocation)
 - [ ] (next) add system for emitting internal events a user can subscribe to
 
@@ -63,4 +63,4 @@
   - [x] test pipeline
   - [ ] release and versioning pipeline
 - [x] freeze context before passing it down to the guards, actions, etc
-- [ ] unify hooks and effects into single thing
+- [x] unify hooks and effects into single thing

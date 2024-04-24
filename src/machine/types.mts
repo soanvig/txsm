@@ -60,18 +60,6 @@ export type MachineEffect<T extends AnyMachineTypes, C extends CommandPayload | 
     ) => Action<T, any, UnwrapPromise<ReturnType<T['actors'][K]>>>
   }) => Action<T, unknown, any>,
 }
-export type MachineHook<T extends AnyMachineTypes> = {
-  /** @note The same type as effect, at least for now */
-  action?: (payload: {
-    context: T['context'],
-    assign: (context: Partial<T['context']>) => Action<T, any, any>,
-    from: typeof Action['from'],
-    invoke: <K extends keyof T['actors'] & string>(
-      actorName: K,
-      ...params: Parameters<T['actors'][K]>
-    ) => Action<T, any, UnwrapPromise<ReturnType<T['actors'][K]>>>
-  }) => Action<T, unknown, any>,
-}
 
 export type MachineTypes<Trsns extends AnyTrsn> = {
   context: ContextValue;
@@ -102,25 +90,27 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
   $config: MachineConfig<Trsn>,
   $transitions: Trsn[],
   $types: Types,
-  $effects: { from: string, to: string, effect: MachineEffect<Types, CommandPayload | null> }[],
-  $hooks: { entry?: string, exit?: string, hook: MachineHook<Types> }[],
+  $effects: Effect<Types>[],
 }
 
-export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> = {
+export type MachineEffectCondition = { enter: string } | { exit: string } | { from: string, to: string };
+
+export interface AddEffect<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
+  <From extends AddEffectParamFrom<Trsn>, To extends AddEffectParamTo<Trsn, NoInfer<From>>> (
+    condition: { from: From, to: To },
+    effect: MachineEffect<Types, Trsn extends Transition<From, To, infer Name> ? Name extends string ? Types['commands'][Name] : null : never>
+  ): StateMachineBuilder<Trsn, Types>;
+
+  (condition: { exit: TrsnStates<Trsn> | typeof Transition.ANY_STATE }, effect: MachineEffect<Types, never>): StateMachineBuilder<Trsn, Types>;
+  (condition: { enter: TrsnStates<Trsn> | typeof Transition.ANY_STATE }, effect: MachineEffect<Types, never>): StateMachineBuilder<Trsn, Types>;
+}
+
+export interface StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
   setTypes: <T extends SetMachineTypes<Trsn>> (
     types: T
   ) => StateMachineBuilder<Trsn, Types & T>;
 
-  addEffect: <From extends AddEffectParamFrom<Trsn>, To extends AddEffectParamTo<Trsn, NoInfer<From>>> (
-    from: From,
-    to: To,
-    effect: MachineEffect<Types, Trsn extends Transition<From, To, infer Name> ? Name extends string ? Types['commands'][Name] : null : never>
-  ) => StateMachineBuilder<Trsn, Types>;
-
-  addHook: (
-    hookSettings: { enter: TrsnStates<Trsn> | typeof Transition.ANY_STATE } | { exit: TrsnStates<Trsn> | typeof Transition.ANY_STATE },
-    hook: MachineHook<Types>
-  ) => StateMachineBuilder<Trsn, Types>;
+  addEffect: AddEffect<Trsn, Types>;
 
   getStateMachine(): StateMachine<Trsn, Types>;
 
@@ -132,7 +122,7 @@ export type StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes
     input: { snapshot: Snapshot }
       & { [K in keyof Types['actors'] as K extends never ? never : 'actors']: Types['actors'] }
   ) => MachineRuntime<Trsn, Types>
-};
+}
 
 export type StateMachineContext<T extends AnyMachineTypes> = T['context'];
 export type StateMachineState<T extends AnyTrsn> = Exclude<TrsnStates<T>, typeof Transition.ANY_STATE>;

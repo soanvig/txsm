@@ -11,7 +11,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected context: Context<StateMachineContext<Types>>;
   protected state: StateMachineState<Trsn>;
   protected status: RuntimeStatus;
-  protected effects: Effect<Types>[];
   protected actors: Types['actors'];
   protected history: History;
 
@@ -21,7 +20,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       context: Context<StateMachineContext<Types>>;
       state: StateMachineState<Trsn>;
       status: RuntimeStatus;
-      effects: Effect<Types>[];
       actors: Types['actors'];
       history: History;
     },
@@ -31,7 +29,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     this.state = payload.state;
     this.actors = payload.actors;
     this.context = payload.context;
-    this.effects = payload.effects;
     this.history = payload.history;
   }
 
@@ -47,7 +44,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       state,
       actors,
       context: Context.create(context),
-      effects: stateMachine.$effects.map(Effect.fromObject),
       history: History.create().saveState(state),
     });
   }
@@ -72,7 +68,6 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
       state: snapshot.state as any,
       actors,
       context: Context.create(snapshot.context),
-      effects: stateMachine.$effects.map(Effect.fromObject),
       history: History.restore(snapshot.history),
     });
   }
@@ -124,7 +119,8 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   }
 
   public getAcceptableCommands (): Command[] {
-    return this.stateMachine.$transitions.filter(t => t.isManual())
+    return this.stateMachine.$transitions
+      .filter(t => t.isManual())
       .map(t => ({ type: t.getTransition().name as string }))
       .filter(c => this.canAcceptCommand(c));
   }
@@ -180,7 +176,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected async changeState (state: StateMachineState<Trsn>): Promise<void> {
     const command = null;
 
-    const exitEffects = this.effects.filter(e => e.matchesExit(this.state));
+    const exitEffects = this.stateMachine.$effects.filter(e => e.matchesExit(this.state));
     for (const effect of exitEffects) {
       await asyncFeedbackIterate(effect.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);
@@ -190,7 +186,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     this.state = state;
     this.history.saveState(state);
 
-    const enterEffects = this.effects.filter(h => h.matchesEnter(state));
+    const enterEffects = this.stateMachine.$effects.filter(h => h.matchesEnter(state));
     for (const effect of enterEffects) {
       await asyncFeedbackIterate(effect.execute({ context: this.context.getReadonly(), result: undefined, command }), async result => {
         return await this.processActionResult(result, command);
@@ -222,7 +218,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
         });
 
       const transition = findMap(applicableTransitions, (t): TransitionPlan<Types> | null => {
-        const effect = this.effects.find(e => e.matchesTransition(t));
+        const effect = this.stateMachine.$effects.find(e => e.matchesTransition(t));
 
         if (!effect) {
           return { transition: t, effect: Effect.emptyFor(t), command };
@@ -254,6 +250,7 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
   protected async processActionResult (actionResult: ActionResult<Types>, command: StateMachineCommands<Types> | null): Promise<ActionStepPayload<Types, any>> {
     switch (actionResult.type) {
       case ActionType.Call:
+        // Call action is resolved inside the Action object, so we just unwrap the result here
         return {
           result: await actionResult.result,
           context: this.context.getReadonly(),

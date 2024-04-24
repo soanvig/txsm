@@ -1,34 +1,33 @@
 import { Effect } from './effect.mjs';
-import { ErrorCode, MachineError } from './errors.mjs';
 import { MachineRuntime } from './machine-runtime.mjs';
+import { validateStateMachine } from './state-machine-validator.mjs';
 import { Transition } from './transition.mjs';
-import { type AnyTrsn, type AnyTrsnObject, type CommandPayload, type EffectCondition, type MachineConfig, type MachineEffect, type MachineTypes, type StateMachine, type StateMachineBuilder, type TrsnObjectToTrsn } from './types.mjs';
+import type { AnyTrsn, AnyTrsnObject, CommandPayload, MachineConfig, MachineEffect, MachineEffectCondition, MachineTypes, StateMachine, StateMachineBuilder, TrsnObjectToTrsn } from './types.mjs';
 
 const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>>(stateMachine: StateMachine<Trsn, Types>): StateMachineBuilder<Trsn, Types> => {
   const builder: StateMachineBuilder<Trsn, Types> = {
-    addEffect: (condition: EffectCondition, effect: MachineEffect<any, never>) => {
-      if ('from' in condition) {
-        const existingEffect = stateMachine.$effects.some(e => {
-          if (Effect.isTrsnCondition(e.condition)) {
-            return e.condition.from === condition.from && e.condition.to === condition.to;
-          }
-        });
-
-        if (existingEffect) {
-          throw new MachineError(ErrorCode.DuplicatedEffect, condition);
-        }
-      }
-
-      return makeStateMachineBuilder({
+    // Ignore that effect has MachineEffect<never> type. It is the only type compatible. The signature takes care of overloading
+    addEffect: (condition: MachineEffectCondition, effect: MachineEffect<any, never>) => {
+      const newStateMachine = {
         ...stateMachine,
-        $effects: stateMachine.$effects.concat({ condition, effect: effect as MachineEffect<Types, CommandPayload | null> }),
-      });
+        $effects: stateMachine.$effects.concat(
+          Effect.fromObject({ condition, effect: effect as MachineEffect<Types, CommandPayload | null> }),
+        ),
+      };
+
+      validateStateMachine(newStateMachine);
+
+      return makeStateMachineBuilder(newStateMachine);
     },
     setTypes: types => {
-      return makeStateMachineBuilder({
+      const newStateMachine = {
         ...stateMachine,
         $types: types as any,
-      }) as any;
+      };
+
+      validateStateMachine(newStateMachine);
+
+      return makeStateMachineBuilder(newStateMachine);
     },
     getStateMachine: () => {
       return stateMachine;

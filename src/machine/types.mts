@@ -90,10 +90,10 @@ export type StateMachine<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrs
   $config: MachineConfig<Trsn>,
   $transitions: Trsn[],
   $types: Types,
-  $effects: { condition: EffectCondition, effect: MachineEffect<Types, CommandPayload | null> }[],
+  $effects: Effect<Types>[],
 }
 
-export type EffectCondition = { enter: string } | { exit: string } | { from: string, to: string };
+export type MachineEffectCondition = { enter: string } | { exit: string } | { from: string, to: string };
 
 export interface AddEffect<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
   <From extends AddEffectParamFrom<Trsn>, To extends AddEffectParamTo<Trsn, NoInfer<From>>> (

@@ -1,14 +1,14 @@
 import { Action } from './action.mjs';
 import { Transition } from './transition.mjs';
-import { ActionType, type ActionResult, type ActionStepPayload, type AnyMachineTypes, type AnyTrsn, type CommandPayload, type EffectCondition, type MachineEffect } from './types.mjs';
+import { ActionType, type ActionResult, type ActionStepPayload, type AnyMachineTypes, type AnyTrsn, type CommandPayload, type MachineEffect, type MachineEffectCondition } from './types.mjs';
 
 export class Effect<Types extends AnyMachineTypes> {
   protected constructor (
-    protected condition: EffectCondition,
+    public readonly condition: MachineEffectCondition,
     protected effect: MachineEffect<Types, CommandPayload | null>,
   ) {}
 
-  public static fromObject <Types extends AnyMachineTypes> (obj: { condition: EffectCondition, effect: MachineEffect<Types, CommandPayload | null> }) {
+  public static fromObject <Types extends AnyMachineTypes> (obj: { condition: MachineEffectCondition, effect: MachineEffect<Types, CommandPayload | null> }) {
     return new Effect(
       obj.condition,
       obj.effect,
@@ -31,6 +31,18 @@ export class Effect<Types extends AnyMachineTypes> {
     return Effect.isExitCondition(this.condition) && (this.condition.exit === state || this.condition.exit === Transition.ANY_STATE);
   }
 
+  public isSameTransition (effect: Effect<any>): boolean {
+    const thisCondition = this.condition;
+    const effectCondition = effect.condition;
+
+    return (
+      Effect.isTrsnCondition(thisCondition)
+      && Effect.isTrsnCondition(effectCondition)
+      && thisCondition.from === effectCondition.from
+      && thisCondition.to === effectCondition.to
+    );
+  }
+
   public async* execute ({ context, command }: ActionStepPayload<Types, any>): AsyncGenerator<ActionResult<Types>, void, ActionStepPayload<Types, any>> {
     if (!this.effect.action) {
       return;
@@ -48,14 +60,14 @@ export class Effect<Types extends AnyMachineTypes> {
   }
 
   public testGuard (payload: { context: Types['context'], command: CommandPayload }): boolean {
-    if (this.effect.guard && !this.effect.guard({ context: payload.context, command: payload.command })) {
-      return false;
+    if (this.effect.guard) {
+      return this.effect.guard({ context: payload.context, command: payload.command });
     }
 
     return true;
   }
 
-  public static isTrsnCondition = (v: EffectCondition): v is { from: string, to: string } => 'from' in v;
-  public static isEnterCondition = (v: EffectCondition): v is { enter: string } => 'enter' in v;
-  public static isExitCondition = (v: EffectCondition): v is { exit: string } => 'exit' in v;
+  public static isTrsnCondition = (v: MachineEffectCondition): v is { from: string, to: string } => 'from' in v;
+  public static isEnterCondition = (v: MachineEffectCondition): v is { enter: string } => 'enter' in v;
+  public static isExitCondition = (v: MachineEffectCondition): v is { exit: string } => 'exit' in v;
 }

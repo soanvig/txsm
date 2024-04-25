@@ -18,17 +18,20 @@
 - [ ] (next) handle nested machines - probably it will be better to have "machine system" that will intertwine two machines together
 - [ ] (next) store more information on history (like context changes and actors invocation)
 - [ ] (next) add system for emitting internal events a user can subscribe to
+- [?] SCXML support
+- [?] Unit testing helper
 
 ## Documentation
 
 - [ ] document state machine and runtime API using comments
 - [ ] README
-  - [ ] how to install
-  - [ ] quick start
+  - [x] how to install
+  - [x] quick start
   - [ ] effects/actions
   - [ ] effects/guards
-  - [ ] hooks/actions
   - [ ] actors
+  - [ ] development notes
+  - [ ] add license clarification
 
 ## Tests
 
@@ -64,3 +67,4 @@
   - [ ] release and versioning pipeline
 - [x] freeze context before passing it down to the guards, actions, etc
 - [x] unify hooks and effects into single thing
+- [ ] work on proper exports from index file, and proper packaging

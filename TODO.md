@@ -27,8 +27,11 @@
 - [ ] README
   - [x] how to install
   - [x] quick start
+  - [ ] transitions, any transition
+  - [ ] setTypes: context, commands
   - [ ] effects/actions
   - [ ] effects/guards
+  - [ ] effects/any state/any transition
   - [ ] actors
   - [ ] development notes
   - [ ] add license clarification
@@ -53,6 +56,7 @@
 
 - [x] validate if provided snapshot matches state machine (state mostly, because we can't check context)
 - [x] validate if there is only one effect per transition
+- [ ] validate if an effect configuration matches available transitions
 - [?] detect loop of automated transitions
 - [?] validate if final state doesn't have automated transition from it (execution stops there, but validation might help debugging) 
 

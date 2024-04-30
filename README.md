@@ -76,11 +76,98 @@ console.log(lightRuntime.getState()); // logs `red`
 console.log(lightRuntime.getContext()); // logs `{ enteredYellowCounter: 1 }`
 ```
 
+## Transitions
+
 ## Effects
 
-### Actions
+Effects are run when transition happens, a state is entered or a state if exited.
+
+When adding an effect user must first decide *when* it should trigger:
+
+```ts
+.addEffect({ from: 'stateName', to: 'stateName' }, ...)
+.addEffect({ enter: 'stateName' }, ...)
+.addEffect({ exit: 'stateName' }, ...)
+```
+
+and then *what* should trigger: 
+
+```ts
+.addEffect({ from: 'stateName', to: 'stateName' }, { // transition effect
+  guard: ...,
+  action: ...,
+})
+.addEffect({ enter: 'stateName' }, { // enter state effect
+  guard: ...,
+  action: ...,
+})
+.addEffect({ exit: 'stateName' }, { // exit state effect
+  guard: ...,
+  action: ...,
+})
+```
+
+Both guard and action are optional.
+
+Guard describes whether the effect should be triggered. **Guard on an effect additionaly might prevent transition from happening** if guard condition is not met.
+Actions can invoke [Actors](#actors), update context, call any function (even an async one). In future its capabilities will be expanded.
+
+All states defined in an effect need to match available states (therefore configured transitions). Transition effect (`from/to`) has to describe correct transition (all available transition are narrowed down using `from`).
+Typescript will help a user with that.
+
+Additionaly, if the effect is configured for a transition (`from/to`), and a transition is triggered using a command (`with` in transition definition), the command will be available both in guard and action.
+This is useful if user wants to use command's payload for some reason (updating context, checking a condition etc):
+
+```ts
+.setTypes({
+  commands: {} as {
+    myCommand: { value: boolean }
+  }
+})
+.addEffect({ from: 'state1', to: 'state2' }, {
+  guard: ({ command }) => command.value === true, // allow transition from state1 to state2 only if command's payload `.value` is equal to true
+})
+```
+
+See [Actions](#actions) and [Guards](#guards) for more details and examples.
 
 ### Guards
+
+Guards are defined on an effect. They inform the runtime whether the effect can be executed. Without a guard, an effect is always run when the condition is met.
+**Guard on an transition effect additionaly might prevent transition from happening** if guard condition is not met.
+
+Guards take a form of a callback, that receives current machine's context, and payload (if an effect is defined for transition that is triggered by a command):
+
+```ts
+.addEffect({ from: 'state1', to: 'state2' }, {
+  guard: ({ context, command }) => c, // command is available only if a transition is trigger by a command
+})
+```
+
+Defining guards on transition effects might guide the flow to reach proper state. Consider the following example:
+
+```ts
+Txsm.create({
+  transitions: [
+    { from: 'pending', to: 'true' },
+    { from: 'pending', to: 'false' },
+  ],
+  config: { initial: 'pending', final: ['true', 'false'] },
+}).setTypes({
+  context: {} as { value: boolean }
+}).addEffect({ from: 'pending', to: 'true' }, {
+  guard: ({ context }) => context.value === true,
+});
+```
+
+We define an automated transition `pending->true`, and automated `pending->false`. We define a context `{ value: boolean }`.
+`pending->true` is defined as a first transition. Upon machine starting, it will try to execute first matching transition.
+However, because there is a guard defined for that transition, the `context.value` is taken into consideration.
+If current machine's `context.value` is `true`, then the machine indeed go to `true` state. However, if machine's `context.value` is `false`,
+then the `pending->true` transition will not be executed, and runtime will check next matching transition: `pending->false`. 
+It does not have any guard, therefore it will be executed, and machine will reach state `false`.
+
+### Actions
 
 ## Actors
 

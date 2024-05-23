@@ -76,7 +76,13 @@ console.log(lightRuntime.getState()); // logs `red`
 console.log(lightRuntime.getContext()); // logs `{ enteredYellowCounter: 1 }`
 ```
 
+## Examples
+
+Examples can be found here: [machines.mts](./test/machines.mts)
+
 ## Transitions
+
+### Commands
 
 ## Effects
 
@@ -134,7 +140,7 @@ See [Actions](#actions) and [Guards](#guards) for more details and examples.
 ### Guards
 
 Guards are defined on an effect. They inform the runtime whether the effect can be executed. Without a guard, an effect is always run when the condition is met.
-**Guard on an transition effect additionaly might prevent transition from happening** if guard condition is not met.
+**Guard on an transition effect additionaly prevents transition from happening** if guard condition is not met.
 
 Guards take a form of a callback, that receives current machine's context, and payload (if an effect is defined for transition that is triggered by a command):
 
@@ -168,6 +174,32 @@ then the `pending->true` transition will not be executed, and runtime will check
 It does not have any guard, therefore it will be executed, and machine will reach state `false`.
 
 ### Actions
+
+Action says what an effect does (besides guarding a transition).
+
+You start defining an action by writing a callback:
+
+```ts
+.addEffect({ from: 'state1', to: 'state2' }, {
+  action: ({ ... }) => ...
+});
+```
+
+The callback accepts few initial starting points you might want to use:
+
+```ts
+.addEffect({ from: 'state1', to: 'state2' }, {
+  action: ({ assign, context, command, invoke, from }) => ...
+});
+```
+
+- `context` is the machine's context (a state)
+- `assign` allows you to update the context (immediately): `assign({ newContextValue: 123 })`
+- `command` is a command that triggered the transition. It works **only** if you define an effect for a particular transition that is triggered with a command (see: [#Commands](#Commands))
+- `invoke` is a method to call an actor (see: [#Actors](#Actors))
+- `from` allows you to write your own action with your own code (you can call external function, log something etc)
+
+Actions are executed one by one, even if they are asynchronous. Therefore, there is a special way for chaining them using `.then` operator (similar to Promises, but it is not a Promise).
 
 ## Actors
 

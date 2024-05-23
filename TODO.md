@@ -32,6 +32,7 @@
   - [ ] effects/actions
   - [ ] effects/guards
   - [ ] effects/any state/any transition
+  - [ ] snapshots
   - [ ] actors
   - [ ] development notes
   - [ ] add license clarification

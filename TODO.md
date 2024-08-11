@@ -33,7 +33,7 @@
   - [x] effects/guards
   - [x] effects/any state/any transition
   - [ ] snapshots
-  - [ ] actors
+  - [x] actors
   - [ ] development notes
   - [ ] add license clarification
 

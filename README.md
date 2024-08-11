@@ -36,8 +36,8 @@ export const lightMachine = Txsm
     // new machine should start from `red`, and there is no final state, because it loops forever
     config: { initial: 'red', final: [] },
   })
-  .setTypes({
-    context: {} as {
+  .setTypes({ // For TypeScript users define command's payload and context type
+    context: {} as { // define context type
       enteredYellowCounter: number
     },
     commands: {} as { // define commands payload
@@ -305,7 +305,58 @@ For that one can set `from` as *current state*:
 
 It is useful to execute an effect without knowing current state.
 
-## Actors
+### Actors
+
+Actors are a way for functions to be injected into machine's runtime. That way, if you have multiple instances of the same machine, each can have it's own dedicated of actors.
+
+Actors are set during machine's initialization:
+
+```ts
+const runtime = myMachine.run({
+  actors: {
+    executeSideEffect: () => {
+      console.log('My side effect')
+    },
+  },
+});
+```
+
+For TypeScript users actors signature is defined in machine's configuration:
+
+```ts
+.setTypes({
+  ...
+  actors: {} as {
+    executeSideEffect: () => void, // Actors can return a Promise (that will be properly awaited), and even some result.
+  },
+})
+```
+
+Actor can be called in an action via `invoke` function:
+
+```ts
+.addEffect({ ... }, {
+  action: ({ invoke }) => invoke('executeSideEffect'),
+});
+```
+
+Actor's function input is provided to `invoke`, and its result is returned in action chain:
+
+```ts
+.setTypes({
+  context: {} as {
+    value: number,
+  },
+  actors: {} as {
+    multiplyBy2: (value: number) => Promise<{ newValue: boolean }>,
+  },
+})
+.addEffect({ ... }, {
+  action: ({ invoke, context }) =>
+    invoke('multiplyBy2', context.value)
+    .then(({ result, assign }) => assign({ value: result.newValue })),
+});
+```
 
 ## How it compares to xstate
 

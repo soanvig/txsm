@@ -69,7 +69,7 @@
 - [x] change architecture: create transition planner (generator) which results will be passed to executor which uses action as generator etc (everything will happen step by step)
 - [ ] CI
   - [x] test pipeline
-  - [ ] release and versioning pipeline
+  - [x] release and versioning pipeline
 - [x] freeze context before passing it down to the guards, actions, etc
 - [x] unify hooks and effects into single thing
 - [ ] work on proper exports from index file, and proper packaging

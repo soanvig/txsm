@@ -6,3 +6,7 @@ typecheck:
 
 test file='':
 	node --import './import-esm.mjs' --test ./test/**/*{{file}}*.spec.mts
+
+build:
+  rm -rf ./build
+  pnpm tsc -p ./tsconfig.build.json

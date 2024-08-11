@@ -378,6 +378,25 @@ it automatically rollbacks to a state from before calling the command. It makes 
 6. Txsm is less fragile when it comes to state machine changes. In xstate when you have a snapshot persisted, changes to a machine definition might very easily lead to a bug. In txsm it is theoretically possible to rebuild entire logic and bring snapshot back to live, as long as the context and the persisted state of a machine is compatible.
 7. Many things achievable in xstate should be achievable in txsm in some way. If not - please open an issue.
 
+## License explanation
+
+`txsm` uses LGPLv3 license. It means, that You can:
+
+1. use library in closed-source projects
+2. redistribute the code (preserving authorship)
+3. make changes to the code
+
+However, if you decide to make changes to the library code, You **has to** publish them under LGPLv3 license.
+This way library legally always stays open source and free.
+
+The best way to make changes is to create public fork of the library.
+
+If You don't plan to add any malicious behaviour to the library, this license should not be harmful for You in any way.
+
+It is also *expected*, that any plugins (extensions or modules) added to library, are respecting final user freedom,
+and are not spying on his actions performed over such module without his knowledge and approval.
+
+
 ## Roadmap/planned features
 
 See [TODO.md](./TODO.md)

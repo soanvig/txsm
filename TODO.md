@@ -35,7 +35,7 @@
   - [x] snapshots
   - [x] actors
   - [ ] development notes
-  - [ ] add license clarification
+  - [x] add license clarification
 
 ## Tests
 

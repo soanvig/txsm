@@ -34,7 +34,7 @@
   - [x] effects/any state/any transition
   - [x] snapshots
   - [x] actors
-  - [ ] development notes
+  - [x] development notes
   - [x] add license clarification
 
 ## Tests

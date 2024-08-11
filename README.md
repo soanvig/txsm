@@ -396,6 +396,14 @@ If You don't plan to add any malicious behaviour to the library, this license sh
 It is also *expected*, that any plugins (extensions or modules) added to library, are respecting final user freedom,
 and are not spying on his actions performed over such module without his knowledge and approval.
 
+## Development notes / contributing
+
+Txsm doesn't use `scripts` from `package.json`. It instead uses [Just](https://github.com/casey/just) - much more flexible command runner.
+Upon installing `just` you can check available recipes in `justfile` or by running `just --list`.
+
+It also uses [pnpm](https://pnpm.io/) instead of `npm`.
+
+It requires fairly modern node js version (at least 21.2.0), because it uses node's test runner and assert library for tests.
 
 ## Roadmap/planned features
 

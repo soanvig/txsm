@@ -82,7 +82,84 @@ Examples can be found here: [machines.mts](./test/machines.mts)
 
 ## Transitions
 
+Transition describes possible change from one state to another. All transitions are defined during machine creation:
+
+```ts
+.create({
+  transitions: [
+    // calling `stop` command will transition from green to yellow if current state is `green`
+    { from: 'green', to: 'yellow', with: 'stop' },
+    // automated transition - no command needs to be called
+    { from: 'yellow', to: 'red' },
+    // calling `walk` command will transition from red to green if current state is `red`
+    { from: 'red', to: 'green', with: 'walk' }, 
+  ],
+})
+```
+
+Because transition describes state change it requires two properties: `from` and `to`. However in most cases one also wants to determine *when* the transition should happen.
+For that `with` property is defined, that creates a [command](#commands) with the given name. 
+
+Transition can happen **only if** the machine is in the transition's `from` state.
+
+Transitions are always respected in the order they are defined. If there are two transitions applicable, the first one will be executed.
+
+### Automated transitions
+
+If the command (`with`) is not defined, then the transition is automated. Upon entering `from` state machine automatically goes to `to` state.
+
+### Current state / any state transition
+
+Transition can also happen from any state (current state) to any state (current state):
+
+```ts
+// As long as force-stop command is executed, it doesn't matter in which state the machine is, it will go to `red` state
+{ from: Transition.CURRENT_STATE, to: 'red', with: 'force-stop' },
+// It doesn't matter in which state the transition is, it will go back to itself after executing `go-to-self`
+{ from: Transition.CURRENT_STATE, to: Transition.CURRENT_STATE, with: 'go-to-self' },
+```
+
 ### Commands
+
+Commands are explicitly invoked transitions. You define (names) command directly on the transition using `with` property:
+
+```ts
+{ from: 'green', to: 'yellow', with: 'stop' },
+```
+
+At this point `stop` command is created. Commands can carry a payload, so one can define it in `.setTypes` if TypeScript is used:
+
+```ts
+.setTypes({
+  commands: {} as { // define commands payload
+    stop: {
+      stopReason: string
+    },
+  },
+})
+```
+
+Commands and their payload can be accessed in [actions](#actions).
+
+Upon creating, the command can be called on the machine using `.execute` function:
+
+```ts
+await lightRuntime.execute({ type: 'stop', stopReason: 'Pedestrian pressed a button' });
+```
+
+Because commands depend on the transitions, and transitions depend on current state, a list of currently executable commands can be checked at any point:
+
+```ts
+// returns true/false if there is a transition for given command in current state
+lightRuntime.canAcceptCommand({ type: 'stop' })
+
+// return true/false if there is a transition for given command, that considering all the checks (state, guards etc) can be executed
+// @NOTE: because it executes all checks it requires the actual command payload
+await lightRuntime.canExecuteCommand({ type: 'stop', stopReason: '...' }) 
+
+// returns array of { type: '...' } objects/commands that can be executed (this function is counterpart of `canAcceptCommand`)
+lightRuntime.getAcceptableCommands();
+```
 
 ## Effects
 
@@ -91,9 +168,9 @@ Effects are run when transition happens, a state is entered or a state if exited
 When adding an effect user must first decide *when* it should trigger:
 
 ```ts
-.addEffect({ from: 'stateName', to: 'stateName' }, ...)
-.addEffect({ enter: 'stateName' }, ...)
-.addEffect({ exit: 'stateName' }, ...)
+.addEffect({ from: 'stateName', to: 'stateName' }, ...) // transition effect
+.addEffect({ enter: 'stateName' }, ...) // enter state effect
+.addEffect({ exit: 'stateName' }, ...) // exit state effect
 ```
 
 and then *what* should trigger: 
@@ -115,11 +192,11 @@ and then *what* should trigger:
 
 Both guard and action are optional.
 
-Guard describes whether the effect should be triggered. **Guard on an effect additionaly might prevent transition from happening** if guard condition is not met.
+Guard describes whether the effect that should be triggered. **Guard on an transition effect additionaly might prevent transition from happening** if guard condition is not met.
 Actions can invoke [Actors](#actors), update context, call any function (even an async one). In future its capabilities will be expanded.
 
-All states defined in an effect need to match available states (therefore configured transitions). Transition effect (`from/to`) has to describe correct transition (all available transition are narrowed down using `from`).
-Typescript will help a user with that.
+All states defined in an effect need to match available states (therefore configured transitions). Transition effect (`from/to`) has to describe correct transition.
+Typescript will help a user with that as all available transition are narrowed down after setting `from`.
 
 Additionaly, if the effect is configured for a transition (`from/to`), and a transition is triggered using a command (`with` in transition definition), the command will be available both in guard and action.
 This is useful if user wants to use command's payload for some reason (updating context, checking a condition etc):
@@ -199,7 +276,34 @@ The callback accepts few initial starting points you might want to use:
 - `invoke` is a method to call an actor (see: [#Actors](#Actors))
 - `from` allows you to write your own action with your own code (you can call external function, log something etc)
 
-Actions are executed one by one, even if they are asynchronous. Therefore, there is a special way for chaining them using `.then` operator (similar to Promises, but it is not a Promise).
+Actions are executed one by one, even if they are asynchronous. Therefore, there is a special way for chaining them using `.then` operator (similar to Promises, but it is not a Promise):
+
+```ts
+.addEffect({ from: 'pending', to: 'end' }, {
+  action: ({ assign }) =>
+    assign({ value1: true })
+      .then(assign({ value2: [true] }))
+      .then(assign({ value3: { subValue2: true }})),
+});
+```
+
+### Any effect / Any state / Current state
+
+In certain cases one might want to be able to execute effect from any state.
+
+For that one can set `from` as *current state*:
+
+```ts
+.addEffect({ enter: Transition.CURRENT_STATE }),
+```
+
+`CURRENT_STATE` can be used for `to`:
+
+```ts
+.addEffect({ exit: Transition.CURRENT_STATE })
+```
+
+It is useful to execute an effect without knowing current state.
 
 ## Actors
 

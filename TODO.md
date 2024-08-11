@@ -27,11 +27,11 @@
 - [ ] README
   - [x] how to install
   - [x] quick start
-  - [ ] transitions, any transition
+  - [x] transitions, any transition
   - [ ] setTypes: context, commands
-  - [ ] effects/actions
-  - [ ] effects/guards
-  - [ ] effects/any state/any transition
+  - [x] effects/actions
+  - [x] effects/guards
+  - [x] effects/any state/any transition
   - [ ] snapshots
   - [ ] actors
   - [ ] development notes

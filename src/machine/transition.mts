@@ -8,19 +8,15 @@ export class Transition<From extends string, To extends string, Name extends str
   ) {}
 
   public getTarget (currentState: string): string | null {
-    if (this.from === Transition.ANY_STATE) {
-      return this.to === Transition.ANY_STATE ? currentState : this.to;
-    }
-
-    if (this.from === currentState) {
-      return this.to === Transition.ANY_STATE ? currentState : this.to;
+    if (this.from === Transition.CURRENT_STATE || this.from === currentState) {
+      return this.to === Transition.CURRENT_STATE ? currentState : this.to;
     }
 
     throw new Error(`Cannot get target for transition. Current state ${currentState} is not applicable to that transition`);
   }
 
   public canTransitionFrom (currentState: string): boolean {
-    return this.from === Transition.ANY_STATE || currentState === this.from;
+    return this.from === Transition.CURRENT_STATE || currentState === this.from;
   }
 
   public is (name: string): boolean {
@@ -51,5 +47,5 @@ export class Transition<From extends string, To extends string, Name extends str
     ) as TrsnObjectToTrsn<T>;
   }
 
-  static ANY_STATE = '*' as const;
+  static CURRENT_STATE = '*' as const;
 }

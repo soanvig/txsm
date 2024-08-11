@@ -24,11 +24,11 @@ export class Effect<Types extends AnyMachineTypes> {
   }
 
   public matchesEnter (state: string): boolean {
-    return Effect.isEnterCondition(this.condition) && (this.condition.enter === state || this.condition.enter === Transition.ANY_STATE);
+    return Effect.isEnterCondition(this.condition) && (this.condition.enter === state || this.condition.enter === Transition.CURRENT_STATE);
   }
 
   public matchesExit (state: string): boolean {
-    return Effect.isExitCondition(this.condition) && (this.condition.exit === state || this.condition.exit === Transition.ANY_STATE);
+    return Effect.isExitCondition(this.condition) && (this.condition.exit === state || this.condition.exit === Transition.CURRENT_STATE);
   }
 
   public isSameTransition (effect: Effect<any>): boolean {

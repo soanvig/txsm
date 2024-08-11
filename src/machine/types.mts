@@ -39,8 +39,8 @@ export type TrsnObjectToTrsn<T extends AnyTrsnObject> = T extends infer R extend
   : never;
 
 export type MachineConfig<T extends AnyTrsn> = {
-  initial: Exclude<TrsnStates<T>, typeof Transition.ANY_STATE>,
-  final: Exclude<TrsnStates<T>, typeof Transition.ANY_STATE>[],
+  initial: Exclude<TrsnStates<T>, typeof Transition.CURRENT_STATE>,
+  final: Exclude<TrsnStates<T>, typeof Transition.CURRENT_STATE>[],
 }
 
 export type CommandPayload = Record<string, any>;
@@ -101,8 +101,8 @@ export interface AddEffect<Trsn extends AnyTrsn, Types extends MachineTypes<AnyT
     effect: MachineEffect<Types, Trsn extends Transition<From, To, infer Name> ? Name extends string ? Types['commands'][Name] : null : never>
   ): StateMachineBuilder<Trsn, Types>;
 
-  (condition: { exit: TrsnStates<Trsn> | typeof Transition.ANY_STATE }, effect: MachineEffect<Types, never>): StateMachineBuilder<Trsn, Types>;
-  (condition: { enter: TrsnStates<Trsn> | typeof Transition.ANY_STATE }, effect: MachineEffect<Types, never>): StateMachineBuilder<Trsn, Types>;
+  (condition: { exit: TrsnStates<Trsn> | typeof Transition.CURRENT_STATE }, effect: MachineEffect<Types, never>): StateMachineBuilder<Trsn, Types>;
+  (condition: { enter: TrsnStates<Trsn> | typeof Transition.CURRENT_STATE }, effect: MachineEffect<Types, never>): StateMachineBuilder<Trsn, Types>;
 }
 
 export interface StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
@@ -125,7 +125,7 @@ export interface StateMachineBuilder<Trsn extends AnyTrsn, Types extends Machine
 }
 
 export type StateMachineContext<T extends AnyMachineTypes> = T['context'];
-export type StateMachineState<T extends AnyTrsn> = Exclude<TrsnStates<T>, typeof Transition.ANY_STATE>;
+export type StateMachineState<T extends AnyTrsn> = Exclude<TrsnStates<T>, typeof Transition.CURRENT_STATE>;
 export type StateMachineCommands<T extends AnyMachineTypes> =
   keyof T['commands'] extends infer Keys extends string
     ? { [K in Keys]: { type: K } & T['commands'][K] }[Keys]

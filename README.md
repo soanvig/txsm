@@ -358,6 +358,15 @@ Actor's function input is provided to `invoke`, and its result is returned in ac
 });
 ```
 
+## Snapshots / persistance
+
+If a machine's state and context needs to be persisted its *snapshot* can be retrieved, and later restored:
+
+```ts
+const snapshot = runtimeBeforeSnapshot.getSnapshot();
+const runtimeAfterSnapshot = snapshotMachine.restoreRuntime({ snapshot });
+```
+
 ## How it compares to xstate
 
 1. Txsm does not have parallel and history states

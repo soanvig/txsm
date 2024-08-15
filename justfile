@@ -10,3 +10,10 @@ test file='':
 build:
   rm -rf ./build
   pnpm tsc -p ./tsconfig.build.json
+
+publish:
+  just lint
+  just typecheck
+  just test
+  just build
+  pnpm publish

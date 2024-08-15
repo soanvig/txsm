@@ -2,13 +2,14 @@
   "name": "txsm",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.mjs",
+  "types": "build/index.d.mts",
   "type": "module",
   "engines": {
     "node": "^21.2.0"
   },
   "keywords": [],
-  "author": "",
+  "author": "soanvig <soanvig@gmail.com>",
   "license": "LGPL-3.0",
   "devDependencies": {
     "@types/node": "^20.11.30",

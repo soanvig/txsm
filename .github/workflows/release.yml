@@ -26,6 +26,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
         if: ${{ steps.release.outputs.release_created }}
       - uses: extractions/setup-just@v2
+      - uses: hustcer/setup-nu@v3
+        with:
+          version: '0.96.1'
       - run: just publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}

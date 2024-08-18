@@ -2,11 +2,29 @@
   "name": "txsm",
   "version": "0.0.1",
   "description": "",
-  "main": "build/index.mjs",
-  "types": "build/index.d.mts",
   "type": "module",
+  "types": "./build/cjs/index.d.cts",
   "engines": {
     "node": "^21.2.0"
+  },
+  "files": [
+    "build"
+  ],
+  "exports": { 
+    ".": { 
+      "require": { 
+        "types": "./build/cjs/index.d.cts",
+        "default": "./build/cjs/index.cjs" 
+      },
+      "default": { 
+        "types": "./build/cjs/index.d.cts",
+        "default": "./build/cjs/index.cjs" 
+      },
+      "import": { 
+        "types": "./build/esm/index.d.mts",
+        "default": "./build/esm/index.mjs" 
+      }
+    } 
   },
   "keywords": [],
   "author": "soanvig <soanvig@gmail.com>",

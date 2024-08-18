@@ -1,5 +1,5 @@
 lint:
-  pnpm eslint "./src/**/*.ts"
+  pnpm eslint "./src/**/*.mts"
 
 typecheck:
   pnpm tsc --noEmit
@@ -9,11 +9,13 @@ test file='':
 
 build:
   rm -rf ./build
-  pnpm tsc -p ./tsconfig.build.json
+  pnpm tsc -p tsconfig.build.json --module nodenext --outDir build/esm
+  pnpm tsc -p tsconfig.build.json --module commonjs --outDir build/cjs
+  nu ./afterbuild-cjs-esm.nu
 
 publish:
   just lint
   just typecheck
   just test
   just build
-  pnpm publish
+  pnpm publish --dry-run

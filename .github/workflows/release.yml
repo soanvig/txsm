@@ -22,15 +22,21 @@ jobs:
       - uses: actions/checkout@v4
         if: ${{ steps.release.outputs.release_created }}
       - uses: actions/setup-node@v4
+        if: ${{ steps.release.outputs.release_created }}
         with:
           node-version: 21
           registry-url: 'https://registry.npmjs.org'
+      - uses: pnpm/action-setup@v4
         if: ${{ steps.release.outputs.release_created }}
+        with:
+          version: 9
       - uses: extractions/setup-just@v2
+        if: ${{ steps.release.outputs.release_created }}
       - uses: hustcer/setup-nu@v3
+        if: ${{ steps.release.outputs.release_created }}
         with:
           version: '0.96.1'
       - run: just publish
+        if: ${{ steps.release.outputs.release_created }}
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        if: ${{ steps.release.outputs.release_created }}

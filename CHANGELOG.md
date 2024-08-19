@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/soanvig/txsm/compare/v1.0.3...v1.0.4) (2024-08-19)
+
+
+### Bug Fixes
+
+* release pipeline ([856e51f](https://github.com/soanvig/txsm/commit/856e51f29300ddcd71f33f9f836e48852d2b4843))
+
 ## [1.0.3](https://github.com/soanvig/txsm/compare/v1.0.2...v1.0.3) (2024-08-19)
 
 

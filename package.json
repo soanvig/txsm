@@ -1,6 +1,6 @@
 {
   "name": "txsm",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "description": "",
   "type": "module",
   "types": "./build/cjs/index.d.cts",
@@ -10,23 +10,27 @@
   "files": [
     "build"
   ],
-  "exports": { 
-    ".": { 
-      "require": { 
+  "exports": {
+    ".": {
+      "require": {
         "types": "./build/cjs/index.d.cts",
-        "default": "./build/cjs/index.cjs" 
+        "default": "./build/cjs/index.cjs"
       },
-      "default": { 
+      "default": {
         "types": "./build/cjs/index.d.cts",
-        "default": "./build/cjs/index.cjs" 
+        "default": "./build/cjs/index.cjs"
       },
-      "import": { 
+      "import": {
         "types": "./build/esm/index.d.mts",
-        "default": "./build/esm/index.mjs" 
+        "default": "./build/esm/index.mjs"
       }
-    } 
+    }
   },
-  "keywords": ["fsm", "state", "machine"],
+  "keywords": [
+    "fsm",
+    "state",
+    "machine"
+  ],
   "author": "soanvig <soanvig@gmail.com>",
   "license": "LGPL-3.0",
   "devDependencies": {

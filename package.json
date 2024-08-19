@@ -33,6 +33,10 @@
   ],
   "author": "soanvig <soanvig@gmail.com>",
   "license": "LGPL-3.0",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/soanvig/txsm"
+  },
   "devDependencies": {
     "@types/node": "^20.11.30",
     "@typescript-eslint/eslint-plugin": "^7.3.1",

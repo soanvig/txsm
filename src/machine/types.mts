@@ -50,10 +50,27 @@ export type Guard<T extends AnyMachineTypes, C extends CommandPayload | null> = 
 export type MachineEffect<T extends AnyMachineTypes, C extends CommandPayload | null> = {
   guard?: Guard<T, C>,
   action?: (payload: {
+    /**
+     * If effect was called after executing a command, this is the command that started the effect.
+     */
     command: C,
+    /**
+     * Current machine's context
+     */
     context: T['context'],
+    /**
+     * Update machine's context. It allows updating context partially, but the partiality is not shallow.
+     * It doesn't allow to partially updated nested objects.
+     * **The update happens instantaneously.**
+     */
     assign: (context: Partial<T['context']>) => Action<T, any, any>,
+    /**
+     * Create action from callback or any other valid type
+     */
     from: typeof Action['from'],
+    /**
+     * Invoke actor defined in StateMachine definition under given `actorName`, providing it with `params` it requires.
+     */
     invoke: <K extends keyof T['actors'] & string>(
       actorName: K,
       ...params: Parameters<T['actors'][K]>
@@ -106,18 +123,49 @@ export interface AddEffect<Trsn extends AnyTrsn, Types extends MachineTypes<AnyT
 }
 
 export interface StateMachineBuilder<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
+  /**
+     * Only for TypeScript users.
+     *
+     * Allows to set state machine typing using convenient syntax:
+     * ```ts
+     * .setTypes({
+     *  context: {} as {
+     *    enteredYellowCounter: number
+     *  },
+     *  commands: {} as {
+     *    stop: {},
+     *    walk: {}
+     *  },
+     *  actors: {} as {
+     *    logSomething: (value: string) => void
+     *  }
+     * })
+     * ```
+     */
   setTypes: <T extends SetMachineTypes<Trsn>> (
     types: T
   ) => StateMachineBuilder<Trsn, Types & T>;
 
+  /**
+   * Adds a new effect to the definiton.
+   *
+   * @param condition - describes when the effect should trigger
+   * @param effect - describes what the effect does
+   */
   addEffect: AddEffect<Trsn, Types>;
 
   getStateMachine(): StateMachine<Trsn, Types>;
 
+  /**
+   * Generate MachineRuntime from the state machine definiton
+   */
   run: (
     input: RunInput<Types>,
   ) => MachineRuntime<Trsn, Types>
 
+  /**
+   * Restores runtime using snapshot, that machine previously created.
+   */
   restoreRuntime: (
     input: { snapshot: Snapshot }
       & { [K in keyof Types['actors'] as K extends never ? never : 'actors']: Types['actors'] }

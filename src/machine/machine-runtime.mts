@@ -6,6 +6,10 @@ import { ErrorCode, MachineError } from './errors.mjs';
 import { History, type HistoryEntry } from './history.mjs';
 import { ActionType, RuntimeStatus, type ActionResult, type ActionStepPayload, type AnyTrsn, type Command, type MachineTypes, type Snapshot, type StateMachine, type StateMachineCommands, type StateMachineContext, type StateMachineState, type TransitionPlan } from './types.mjs';
 
+/**
+ * Machine runtime encapsulates state machine definition, context, state and actors.
+ * StateMachine by itself is unusable without the runtime to run it.
+ */
 export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> {
   protected stateMachine: StateMachine<Trsn, Types>;
   protected context: Context<StateMachineContext<Types>>;
@@ -32,6 +36,15 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     this.history = payload.history;
   }
 
+  /**
+   * Initialize new runtime
+   *
+   * @param stateMachine - state machine to initialize
+   * @param context - initial machine's context
+   * @param state - initial machine's state
+   * @param actors - list of actors that machine requires access to
+   * @returns
+   */
   public static create<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> (
     stateMachine: StateMachine<Trsn, Types>,
     context: StateMachineContext<Types>,
@@ -48,6 +61,14 @@ export class MachineRuntime<Trsn extends AnyTrsn, Types extends MachineTypes<Any
     });
   }
 
+  /**
+   * Restore state machine using given snapshot. Snapshot has to be produced by the same state machine it is restored into.
+   *
+   * @param stateMachine - state machine that produced the snapshot
+   * @param snapshot - snapshot to load
+   * @param actors - actors as in `.create`
+   * @returns
+   */
   public static restore<Trsn extends AnyTrsn, Types extends MachineTypes<AnyTrsn>> (
     stateMachine: StateMachine<Trsn, Types>,
     snapshot: Snapshot,

@@ -23,12 +23,12 @@
 
 ## Documentation
 
-- [ ] document state machine and runtime API using comments
+- [x] document state machine and runtime API using comments
 - [ ] README
   - [x] how to install
   - [x] quick start
   - [x] transitions, any transition
-  - [ ] setTypes: context, commands
+  - [x] setTypes: context, commands
   - [x] effects/actions
   - [x] effects/guards
   - [x] effects/any state/any transition
@@ -67,9 +67,9 @@
 - [x] unify `canAcceptCommand`, `canExecuteCommand` and `execute` checks
 - [x] partial .setTypes
 - [x] change architecture: create transition planner (generator) which results will be passed to executor which uses action as generator etc (everything will happen step by step)
-- [ ] CI
+- [x] CI
   - [x] test pipeline
   - [x] release and versioning pipeline
 - [x] freeze context before passing it down to the guards, actions, etc
 - [x] unify hooks and effects into single thing
-- [ ] work on proper exports from index file, and proper packaging
+- [x] work on proper exports from index file, and proper packaging

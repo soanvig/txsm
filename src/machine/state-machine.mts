@@ -39,9 +39,14 @@ const makeStateMachineBuilder = <Trsn extends AnyTrsn, Types extends MachineType
 };
 
 export const Txsm = {
+  /**
+   * Create new state machine definition.
+   */
   create: <const T extends AnyTrsnObject> (
     params: {
+      /** List of transitions that describes available states and commands */
       transitions: T[],
+      /** Machine's configuration (initial state, final states) */
       config: MachineConfig<TrsnObjectToTrsn<T>>,
     },
   ): StateMachineBuilder<TrsnObjectToTrsn<T>, { actors: {}, commands: {}, context: {} }> => {

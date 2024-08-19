@@ -14,6 +14,7 @@ build:
   nu ./afterbuild-cjs-esm.nu
 
 publish:
+  pnpm install
   just lint
   just typecheck
   just test

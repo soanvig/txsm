@@ -19,4 +19,4 @@ publish:
   just typecheck
   just test
   just build
-  pnpm publish --dry-run
+  pnpm publish --no-git-checks

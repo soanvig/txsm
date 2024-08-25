@@ -428,6 +428,8 @@ It also uses [pnpm](https://pnpm.io/) instead of `npm`.
 
 It requires fairly modern Node.js version (at least 21.2.0), because it uses node's test runner and assert library for tests.
 
+During publishing [Nushell](https://www.nushell.sh/) script is used.
+
 ## Roadmap/planned features
 
 See [TODO.md](./TODO.md)

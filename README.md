@@ -2,15 +2,38 @@
 
 Transactional state machines for backend (but not only) solutions.
 
+<!-- TOC -->
+
+- [txsm](#txsm)
+  - [Features](#features)
+  - [Quick start](#quick-start)
+  - [Examples](#examples)
+  - [Transitions](#transitions)
+    - [Automated transitions](#automated-transitions)
+    - [Current state / any state transition](#current-state--any-state-transition)
+    - [Commands](#commands)
+  - [Effects](#effects)
+    - [Guards](#guards)
+    - [Actions](#actions)
+    - [Any effect / Any state / Current state](#any-effect--any-state--current-state)
+    - [Actors](#actors)
+  - [Snapshots / persistence](#snapshots--persistence)
+  - [How it compares to xstate](#how-it-compares-to-xstate)
+  - [License explanation](#license-explanation)
+  - [Development notes / contributing](#development-notes--contributing)
+  - [Roadmap/planned features](#roadmapplanned-features)
+
+<!-- /TOC -->
+
 ## Features
 
 - Awaitable transitions (support for async operations across the functionality)
 - Transactional operations (the machine cannot land in incorrect/not-expected state)
-- Easy machine definition that works close with JavaScript
+- Easy machine definition that is close to JavaScript
 - Multiple transitions from a state with one event via guards
-- Persistance and restoration
-- Actions (side effects) on transitions
-- Ability to provide actions implementation separately from the machine definition (via actors)
+- Persistence and restoration
+- Side effects on transitions via actions
+- Ability to provide actions implementation separately from the machine definition (dependency injection) via actors
 - Full and strict TypeScript support
 - History of states
 
@@ -31,7 +54,7 @@ export const lightMachine = Txsm
       // automated transition - no command needs to be called
       { from: 'yellow', to: 'red' },
       // calling `walk` command will transition from red to green if current state is `red`
-      { from: 'red', to: 'green', with: 'walk' }, 
+      { from: 'red', to: 'green', with: 'walk' },
     ],
     // new machine should start from `red`, and there is no final state, because it loops forever
     config: { initial: 'red', final: [] },
@@ -92,13 +115,13 @@ Transition describes possible change from one state to another. All transitions 
     // automated transition - no command needs to be called
     { from: 'yellow', to: 'red' },
     // calling `walk` command will transition from red to green if current state is `red`
-    { from: 'red', to: 'green', with: 'walk' }, 
+    { from: 'red', to: 'green', with: 'walk' },
   ],
 })
 ```
 
-Because transition describes state change it requires two properties: `from` and `to`. However in most cases one also wants to determine *when* the transition should happen.
-For that `with` property is defined, that creates a [command](#commands) with the given name. 
+Because transition describes state change it requires two properties: and `to`. However, in most cases one also wants to determine *when* the transition should happen.
+For that `with` property is defined, that creates a [command](#commands) with the given name.
 
 Transition can happen **only if** the machine is in the transition's `from` state.
 
@@ -155,7 +178,7 @@ lightRuntime.canAcceptCommand({ type: 'stop' })
 
 // return true/false if there is a transition for given command, that considering all the checks (state, guards etc) can be executed
 // @NOTE: because it executes all checks it requires the actual command payload
-await lightRuntime.canExecuteCommand({ type: 'stop', stopReason: '...' }) 
+await lightRuntime.canExecuteCommand({ type: 'stop', stopReason: '...' })
 
 // returns array of { type: '...' } objects/commands that can be executed (this function is counterpart of `canAcceptCommand`)
 lightRuntime.getAcceptableCommands();
@@ -173,7 +196,7 @@ When adding an effect user must first decide *when* it should trigger:
 .addEffect({ exit: 'stateName' }, ...) // exit state effect
 ```
 
-and then *what* should trigger: 
+and then *what* should trigger:
 
 ```ts
 .addEffect({ from: 'stateName', to: 'stateName' }, { // transition effect
@@ -192,13 +215,13 @@ and then *what* should trigger:
 
 Both guard and action are optional.
 
-Guard describes whether the effect that should be triggered. **Guard on an transition effect additionaly might prevent transition from happening** if guard condition is not met.
+Guard describes whether the effect that should be triggered. **Guard on a transition effect additionally might prevent transition from happening** if guard condition is not met.
 Actions can invoke [Actors](#actors), update context, call any function (even an async one). In future its capabilities will be expanded.
 
 All states defined in an effect need to match available states (therefore configured transitions). Transition effect (`from/to`) has to describe correct transition.
 Typescript will help a user with that as all available transition are narrowed down after setting `from`.
 
-Additionaly, if the effect is configured for a transition (`from/to`), and a transition is triggered using a command (`with` in transition definition), the command will be available both in guard and action.
+Additionally, if the effect is configured for a transition (`from/to`), and a transition is triggered using a command (`with` in transition definition), the command will be available both in guard and action.
 This is useful if user wants to use command's payload for some reason (updating context, checking a condition etc):
 
 ```ts
@@ -217,7 +240,7 @@ See [Actions](#actions) and [Guards](#guards) for more details and examples.
 ### Guards
 
 Guards are defined on an effect. They inform the runtime whether the effect can be executed. Without a guard, an effect is always run when the condition is met.
-**Guard on an transition effect additionaly prevents transition from happening** if guard condition is not met.
+**Guard on a transition effect additionally prevents transition from happening** if guard condition is not met.
 
 Guards take a form of a callback, that receives current machine's context, and payload (if an effect is defined for transition that is triggered by a command):
 
@@ -247,7 +270,7 @@ We define an automated transition `pending->true`, and automated `pending->false
 `pending->true` is defined as a first transition. Upon machine starting, it will try to execute first matching transition.
 However, because there is a guard defined for that transition, the `context.value` is taken into consideration.
 If current machine's `context.value` is `true`, then the machine indeed go to `true` state. However, if machine's `context.value` is `false`,
-then the `pending->true` transition will not be executed, and runtime will check next matching transition: `pending->false`. 
+then the `pending->true` transition will not be executed, and runtime will check next matching transition: `pending->false`.
 It does not have any guard, therefore it will be executed, and machine will reach state `false`.
 
 ### Actions
@@ -274,7 +297,7 @@ The callback accepts few initial starting points you might want to use:
 - `assign` allows you to update the context (immediately): `assign({ newContextValue: 123 })`
 - `command` is a command that triggered the transition. It works **only** if you define an effect for a particular transition that is triggered with a command (see: [#Commands](#Commands))
 - `invoke` is a method to call an actor (see: [#Actors](#Actors))
-- `from` allows you to write your own action with your own code (you can call external function, log something etc)
+- `from` allows you to write your own action with your own code (you can call external function, log something etc.)
 
 Actions are executed one by one, even if they are asynchronous. Therefore, there is a special way for chaining them using `.then` operator (similar to Promises, but it is not a Promise):
 
@@ -307,7 +330,7 @@ It is useful to execute an effect without knowing current state.
 
 ### Actors
 
-Actors are a way for functions to be injected into machine's runtime. That way, if you have multiple instances of the same machine, each can have it's own dedicated of actors.
+Actors are a way for functions to be injected into machine's runtime. That way, if you have multiple instances of the same machine, each can have its own dedicated of actors.
 
 Actors are set during machine's initialization:
 
@@ -358,7 +381,7 @@ Actor's function input is provided to `invoke`, and its result is returned in ac
 });
 ```
 
-## Snapshots / persistance
+## Snapshots / persistence
 
 If a machine's state and context needs to be persisted its *snapshot* can be retrieved, and later restored:
 
@@ -370,7 +393,7 @@ const runtimeAfterSnapshot = snapshotMachine.restoreRuntime({ snapshot });
 ## How it compares to xstate
 
 1. Txsm does not have parallel and history states
-2. Txsm does not have delayed events, timers etc as I consider them a bloat. If needed similar thing can be implemented manually by the user using actions.
+2. Txsm does not have delayed events, timers etc. as I consider them a bloat. If needed similar thing can be implemented manually by the user using actions.
 3. Txsm supports awaitable transitions and performs them in a transactional way. That means if a command is called, and it results in going through multiple states, if at some point execution fails,
 it automatically rollbacks to a state from before calling the command. It makes it perfect for backend use.
 4. The API is oriented around transitions, not around states. Transitions define what is possible, and which states are achievable. Calling actions and checking guards is just an addition. That leads to machine being much easier to read and reason about.
@@ -386,12 +409,12 @@ it automatically rollbacks to a state from before calling the command. It makes 
 2. redistribute the code (preserving authorship)
 3. make changes to the code
 
-However, if you decide to make changes to the library code, You **has to** publish them under LGPLv3 license.
+However, if you decide to make changes to the library code, You **have to** publish them under LGPLv3 license.
 This way library legally always stays open source and free.
 
 The best way to make changes is to create public fork of the library.
 
-If You don't plan to add any malicious behaviour to the library, this license should not be harmful for You in any way.
+If You don't plan to add any malicious behavior to the library, this license should not be harmful for You in any way.
 
 It is also *expected*, that any plugins (extensions or modules) added to library, are respecting final user freedom,
 and are not spying on his actions performed over such module without his knowledge and approval.
@@ -399,11 +422,11 @@ and are not spying on his actions performed over such module without his knowled
 ## Development notes / contributing
 
 Txsm doesn't use `scripts` from `package.json`. It instead uses [Just](https://github.com/casey/just) - much more flexible command runner.
-Upon installing `just` you can check available recipes in `justfile` or by running `just --list`.
+Upon installing, `just` you can check available recipes in `justfile` or by running `just --list`.
 
 It also uses [pnpm](https://pnpm.io/) instead of `npm`.
 
-It requires fairly modern node js version (at least 21.2.0), because it uses node's test runner and assert library for tests.
+It requires fairly modern Node.js version (at least 21.2.0), because it uses node's test runner and assert library for tests.
 
 ## Roadmap/planned features
 
